@@ -1,0 +1,30 @@
+program test1;
+var i:integer;
+	t1:integer;
+	t2:float;
+	k:integer;
+type anc=record 
+   c:integer;
+   zz:string;
+   gfd:float;
+   ghdg122:float;
+   end;
+begin
+  i:=10;
+  if i=10 then
+  begin
+    i:=11;
+	t1:=3888;
+	t2:=34.33;
+	
+  end;
+  while i<>10 do
+  begin
+    t1:=377;
+	t2:=37337.376363;
+  end;
+  for k:=0 to 100 do
+  begin
+    i:=k;
+  end;
+end.

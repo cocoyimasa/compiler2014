@@ -1,0 +1,26 @@
+function cc(a:int,b:bool);
+begin
+    a:= 10;
+	b :=true;
+	c: int;
+	d: int ;
+	c := c+a;
+	c:=c*a+c/a+c-a+c+a;
+	if(a=0 and b=true or c=20  )
+	begin
+	    a:=20;
+	end
+	if(d<>c)
+	begin
+	d= c;
+	end
+	procedure dddd(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:string,func:function);
+	begin
+	while(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb>="dddggddffwdsdsdsdsdssdaddsdsdsddsddsdsdds")
+	begin
+		func(" g  ddgg    d" ,cc)
+		hh:float;
+		hh=36535535.73545
+	end
+	
+end

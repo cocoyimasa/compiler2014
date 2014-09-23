@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="swd::Node">
+    <Position X="9.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAgAAAAAAAABAAAAAACAAAAAAACAAAAggAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::Statement">
+    <Position X="8.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::Expression">
+    <Position X="18.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::AssignStmt">
+    <Position X="11.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAgAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::ComparisonExp">
+    <Position X="18.5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAIAAAAgAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::FuncCall">
+    <Position X="2.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAIAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::IfStmt">
+    <Position X="7.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::ElseStmt">
+    <Position X="14" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::WhileStmt">
+    <Position X="0.5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::RepeatStmt">
+    <Position X="5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::ForStmt">
+    <Position X="9.5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAEAAAAAgAAAAAAAAAAAAQAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::CaseStmt">
+    <Position X="16.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::Error">
+    <Position X="21" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAIAAEQAAAAAAAAAAAAAgAAAAAAAAAAAABIA=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="swd::Parser">
+    <Position X="22.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IEgxAAABAEEAAAAIEiCiABAEAACAAgKACCAIAEAAAAI=</HashCode>
+      <FileName>parser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Microsoft YaHei UI" Size="9" />
+</ClassDiagram>
