@@ -1,4 +1,6 @@
 program test1;
+const PI:=3.14159;
+      E:=2.1111;
 var i:integer;
 	t1:integer;
 	t2:float;
@@ -9,9 +11,21 @@ type anc=record
    gfd:float;
    ghdg122:float;
    end;
+function testFunc(a:integer;b:integer):integer;
+begin
+a:=10;
+b:=1000.22;
+end;
 begin
   i:=10;
   if i=10 then
+  begin
+    i:=11;
+	t1:=3888;
+	t2:=34.33;
+	testFunc(200,300);
+  end;
+  if i>10 then
   begin
     i:=11;
 	t1:=3888;

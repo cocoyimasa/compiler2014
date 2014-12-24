@@ -1,18 +1,26 @@
 #include "parser.h"
+/**
+*@time 2014-08-31
+*@author wanghesai
+*All rights reserved
+*many bugs fixed in 2014-12-23/12-24
+*/
 namespace swd
 {
 	void Node::print()
 	{
 		for (auto node : list)
 		{
-			std::cout <<"<" <<"#type:" <<node->value.tag<<"#"<<node->value.value<<">" << endl;
+			std::cout <<"{ " <<"type:" <<node->value.tag<<" | "
+				<<"node"<<" }" << endl;
 			node->print();
 		}
 	}
 
 	void Statement::print()
 	{
-		std::cout << "<" << "#type:" << this->value.tag << "#" << this->value.value << ">" << " ";
+		std::cout << "{ " << "type:" << this->value.tag << " | " 
+			<< "Statements" << " }" << " ";
 		for (auto item : list)
 		{
 			item->print();
@@ -21,7 +29,8 @@ namespace swd
 
 	void Expression::print()
 	{
-		std::cout << "<" << "#type:" << this->value.tag << "#" << this->value.value << ">" << " ";
+		std::cout << "{ " << "type:" << this->value.tag 
+			<< " | " << this->value.value << " }" << " ";
 		for (auto item : list)
 		{
 			item->print();
@@ -38,9 +47,9 @@ namespace swd
 	void ComparisonExp::print()
 	{
 		cout << endl;
-		cout << "-->" << endl;
+		cout << "ComparisonExp-->" << endl;
 		left->print();
-		cout << "<" << "#type:" << op.tag << "#" << op.value << ">" << " ";
+		cout << "{ " << "type:" << op.tag << " | " << op.value << " }" << " ";
 		right->print();
 		cout << endl;
 	}
@@ -48,11 +57,12 @@ namespace swd
 	void IfStmt::print()
 	{
 		cout << endl;
-		cout << "-->" << endl;
+		cout << "IfStatement-->" << endl;
 		condition->print();
-		for (auto item : this->list)
+		this->thenBody->print();
+		if (this->haveElse)
 		{
-			item->print();
+			this->elseBody->print();
 		}
 		cout << endl;
 	}
@@ -60,53 +70,104 @@ namespace swd
 	void WhileStmt::print()
 	{
 		cout << endl;
-		cout << "-->" << endl;
+		cout << "WhileStatement-->" << endl;
 		condition->print();
-		for (auto item : this->list)
-		{
-			item->print();
-		}
+		this->body->print();
 		cout << endl;
 	}
 
 	void RepeatStmt::print()
 	{
 		cout << endl;
-		cout << "-->" << endl;
+		cout << "RepeatStmt-->" << endl;
 		untilCond->print();
-		for (auto item : this->list)
-		{
-			item->print();
-		}
+		this->body->print();
 		cout << endl;
 	}
 
 	void ForStmt::print()
 	{
 		cout << endl;
-		cout << "-->" << endl;
-		startValue->print();
+		cout << "ForStmt-->" << endl;
+		startStmt->print();
 		endValue->print();
-		nextValue->print();
-		for (auto item : this->list)
-		{
-			item->print();
-		}
+		startStmt->print();
+		this->body->print();
 		cout << endl;
 	}
 
 	void CaseStmt::print()
 	{
 		cout << endl;
-		cout << "-->" << endl;
+		cout << "CaseStmt-->" << endl;
 		condition->print();
-		for (auto item : this->list)
+		for (auto item : this->body)
 		{
 			item->print();
 		}
 		cout << endl;
 	}
 
+	void FuncCall::print()
+	{
+		cout<<this->funcName<<"( ";
+		for (auto item : this->constants)
+		{
+			cout<<item.value<<" ";
+		}
+		cout <<" )"<< endl;
+	}
+
+	void FunctionStmt::print()
+	{
+		cout << this->funcDecl->name << " " << this->funcDecl->returnType << endl;
+		this->body->print();
+	}
+
+	void ConstantStmt::print()
+	{
+		if (this->constRoot.size() == 0 || this->constDeclare != NULL)
+		{
+			cout << "Constant:" << this->constDeclare->name << endl;
+		}
+		if (this->constRoot.size() > 0)
+		{
+			for (auto item : this->constRoot)
+			{
+				item->print();
+			}
+		}
+	}
+
+	void TypeStmt::print()
+	{
+		if (this->typeRoot.size() == 0 || this->typeDeclare != NULL)
+		{
+			cout << "Constant:" << this->typeDeclare->name << endl;
+		}
+		if (this->typeRoot.size() > 0)
+		{
+			for (auto item : this->typeRoot)
+			{
+				item->print();
+			}
+		}
+	}
+	void VariableStmt::print()
+	{
+		if (this->varRoot.size() == 0 || this->varDeclare != NULL)
+		{
+			cout << "Constant:" << this->varDeclare->name << endl;
+		}
+		if (this->varRoot.size() > 0)
+		{
+			for (auto item : this->varRoot)
+			{
+				item->print();
+			}
+		}
+	}
+	//Node =
 	bool Node::operator=(Node &node)
 	{
 		this->value = node.value;
@@ -116,14 +177,28 @@ namespace swd
 		std::copy(node.list.begin(), node.list.end(), std::back_inserter(list));
 		return 1;
 	}
-
+	//Error
 	void Error::errorPrint()
 	{
-		std::cout << errToken.value << " " << errorStr << " in line " << errLine << std::endl;
+		std::cout << errToken.value << " " 
+			<< errorStr << " in line " << errLine << std::endl;
 	}
-	bool Parser::advance(Tag t)//可选的Follow，没有的话直接跳过
+	///-----------------------------------------------------------------------
+	///Parser begin-----------------------------------------------------------
+	///-----------------------------------------------------------------------
+	bool Parser::advance(Tag t)//超前查看可选的Follow，没有的话直接跳过
 	{
 		if ((it + 1)->tag == t)
+		{
+			return true;
+		}
+		else
+			return false;
+	}
+
+	bool Parser::find(Tag t)//可选的Follow，没有的话直接跳过
+	{
+		if (it->tag == t)
 		{
 			return true;
 		}
@@ -137,7 +212,7 @@ namespace swd
 			return true;
 		else
 		{
-			Error err("syntax err", *it);
+			Error err("syntax error", *it);
 			errList.push_back(err);
 			return false;
 		}
@@ -148,32 +223,26 @@ namespace swd
 		if (it->tag == PROGRAM)
 		{
 			it++;
-			//记录program名字入符号表 符号表项为名字 值 域
-			//---to be implemented
-			SymbolTable *symTable = new SymbolTable;
-			Declaration *progDecl=new Declaration;
-			progDecl->name = it->value;
-			progDecl->type = DeclaredType::Program;
-
-			symTable->tableName = it->value;
-			symTable->add(it->value, progDecl);
-			symStack->push(symTable);
-
-			Node *beginNode = new Node;
+			//根节点生成
+			shared_ptr<Node> beginNode = make_shared<Node>();
 			beginNode->value = *it;
 			root = beginNode;
 			currNode = root;
 			it++;
-			_ASSERT(match(SEMI));
+			match(SEMI);
 			parseBlock();
 		}
 		else
 		{
 			//unexpected symbol error
+			Error err("unexpected symbol error", *it);
+			errList.push_back(err);
 		}
 		if (it->tag != FINISH)
 		{
 			//missing the finish symbol
+			Error err("missing the finish symbol", *it);
+			errList.push_back(err);
 		}
 	}
 	//lead into the program
@@ -185,6 +254,7 @@ namespace swd
 			case CONSTANT:
 				parseConstant();
 				parseBlock();
+				break;
 			case VAR:
 				parseVariables();
 				parseBlock();
@@ -203,49 +273,52 @@ namespace swd
 				break;
 			case BEGIN:
 				{
-					Statement *block = parseStmtList(currNode == root ? FINISH : END);
-					currNode->addNode(block);
-					currNode = block;
-					_ASSERT(it->tag == FINISH || it->tag == END);
+					shared_ptr<Statement> block = 
+						parseStmtList(currNode == root ? FINISH : END);
+					//root的block与函数的block
+					if (currNode != root)
+					{
+						(static_pointer_cast<FunctionStmt>(currNode))->body=block;
+					}
+					else
+					{
+						currNode->addNode(block);
+					}
+					bool tmp=it->tag == FINISH || it->tag == END;
 					if (it->tag == END)
 					{
 						it++;
-						_ASSERT(match(SEMI));
+						match(SEMI);
 					}
 				}
 				break;
 		}
 	}
 	//函数和过程的通用解析方法
-	Statement* Parser::parseProcedureBase(bool isFunction)
+	shared_ptr<Statement> Parser::parseProcedureBase(bool isFunction)
 	{
-		FunctionStmt *funcStmt = new FunctionStmt;
-		//将函数声明加入符号表
-		FunctionDecl *funcDecl = new FunctionDecl;
-		SymbolTable *symTable = symStack->getTable(symStack->currNestLevel);
-		symTable->add(funcStmt->funcName, funcDecl);
-		//创建局部符号表加入符号栈
-		SymbolTable *symTable = new SymbolTable;
-		symStack->push(symTable);
+		shared_ptr<FunctionStmt> funcStmt = make_shared<FunctionStmt>();
+		shared_ptr<FunctionDecl> funcDecl = make_shared<FunctionDecl>();
+		funcStmt->funcDecl = funcDecl;
 		//保存当前结点，将当前结点指向函数结点
 		currNode->addNode(funcStmt);
-		Node* tmpNode = currNode;
+		shared_ptr<Node> tmpNode = currNode;
 		currNode = funcStmt;
 		//获取函数名
 		it++;
 		if (it->tag == IDENT)
 		{
-			funcStmt->funcName = it->value;
 			funcDecl->name = it->value;
 		}
 		//匹配左括号
 		it++;
-		_ASSERT(match(OpenBracket));
+		match(OpenBracket);
 		//解析参数
 		it++;
 		while (it->tag != CloseBracket)
 		{
 			vector<std::string> args;
+			while (!args.empty())args.pop_back();
 			//解析参数列表Lambda表达式-------------------------------
 			auto parseArgs = [&](){
 				while (it->tag != Colon)
@@ -260,21 +333,16 @@ namespace swd
 				it++;
 				for (auto val : args)
 				{
-					VariableDecl *varDecl = new VariableDecl;
+					shared_ptr<VariableDecl> varDecl = make_shared<VariableDecl>();
 					varDecl->name = val;
 					varDecl->type = DeclaredType::Variable;
 					varDecl->identity = *it;
-					VariableStmt *varStmt = new VariableStmt;
-					varStmt->varDeclare = varDecl;
-
-					funcStmt->arguments.push_back(varStmt);
+					//shared_ptr<VariableStmt> varStmt = make_shared<VariableStmt>();
+					//varStmt->varDeclare = varDecl;
 					funcDecl->vars.push_back(varDecl);
-
-					symTable->add(varDecl->name, varDecl);
 				}
 			};
 			//-----------------------------------------------
-			it++;
 			if (it->tag == VAR)//有VAR为引用传递，否则为值传递
 			{
 				it++;
@@ -284,180 +352,175 @@ namespace swd
 			{
 				parseArgs();
 			}
-
-			if (!advance(SEMI))//如果是;,继续循环，否则应该是）,退出循环
+			it++;//match(";") or ")"
+			if (find(SEMI))//如果是;,继续循环，否则应该是）,退出循环
 			{
 				it++;
 			}
+			else
+			{
+				break;
+			}
 		}
 		it++;
+		match(Colon);
+		it++;//return value
 		funcDecl->type = DeclaredType::Procedure;
 		if (isFunction)//函数有返回值,过程没有
 		{
-			funcStmt->retType = *it;
 			funcDecl->type = DeclaredType::Function;
 			funcDecl->returnType = it->value;
 			it++;
 		}
-		_ASSERT(match(SEMI));
+		match(SEMI);
 		if (!advance(FORWORD))//是否有forword关键字声明
 		{
-			parseBlock();//无论下一个Token是VAR还是BEGIN，都可以用Block解析
+			//var or begin
+			parseBlock();//无论下一个Token是VAR还是BEGIN，都可以用Block解析,且在内部加入到currentnode
 			currNode = tmpNode;
-			currNode->addNode(funcStmt);
-			if (isFunction)
-			{
-				if (symStack->lookup(funcStmt->funcName) != NULL)
-				{
-					Declaration *decl = symStack->lookup(funcStmt->funcName);
-					symStack->pop();
-					SymbolTable *symTable = symStack->getTable(symStack->currNestLevel);
-					symTable->add(funcStmt->funcName, decl);
-				}
-				else
-				{
-					Error err("Function无返回值,请书写返回值", *it);
-					errList.push_back(err);
-				}
-			}
-			else{
-				symStack->pop();
-			}
 			return funcStmt;
 		}
 		else
 		{
 			it++;
-			_ASSERT(match(FORWORD));
+			match(FORWORD);
 			it++;
-			_ASSERT(match(SEMI));
-			symStack->pop();
+			match(SEMI);
 		}
 	}
 
-	Statement* Parser::parseProcedure()
+	shared_ptr<Statement> Parser::parseProcedure()
 	{
-		parseProcedureBase(false);
+		return parseProcedureBase(false);
 	}
-	Statement* Parser::parseFunction()
+	shared_ptr<Statement> Parser::parseFunction()
 	{
-		parseProcedureBase(true);
+		return parseProcedureBase(true);
 	}
 
-	void Parser::parseVariables()
+	shared_ptr<VariableStmt> Parser::parseVariables()
 	{
-		SymbolTable *symTable = symStack->getTable(symStack->currNestLevel);
+		shared_ptr<VariableStmt> rootVal = make_shared<VariableStmt>();
+		rootVal->varDeclare = NULL;
 		while (advance(IDENT))
 		{
-			VariableDecl *varDecl = parseVariable();
-			symTable->add(varDecl->name, varDecl);
-			VariableStmt *varStmt = new VariableStmt;
+			auto varDecl = parseVariable();
+			auto varStmt = make_shared<VariableStmt>();
 			varStmt->varDeclare = varDecl;
-			currNode->addNode(varStmt);
+			rootVal->varRoot.push_back(varStmt);
 		}
+		currNode->addNode(rootVal);
+		return rootVal;
 	}
 
-	VariableDecl* Parser::parseVariable()
+	shared_ptr<VariableDecl> Parser::parseVariable()
 	{
-		VariableDecl *varDecl=new VariableDecl;
+		auto varDecl= make_shared<VariableDecl>();
 		it++;
 		varDecl->name = it->value;
 		varDecl->type = DeclaredType::Variable;
 		it++;
-		_ASSERT(match(Colon));
+		match(Colon);
 		it++;
 		varDecl->identity = *it;
 		it++;
-		_ASSERT(match(SEMI));
+		match(SEMI);
 		return varDecl;
 	}
 
-	void Parser::parseType()//暂不支持数组和枚举类型
+	shared_ptr<TypeStmt> Parser::parseType()//暂不支持数组和枚举类型
 	{
-		SymbolTable *symTable = symStack->getTable(symStack->currNestLevel);
 		it++;
+		auto typeRootVal = make_shared<TypeStmt>();
+		typeRootVal->typeDeclare = NULL;
 		while (it->tag == IDENT)
 		{
-			TypeDecl *typeDecl=new TypeDecl;
+			auto typeDecl=make_shared<TypeDecl>();
 
-			TypeStmt *typeStmt = new TypeStmt;
+			auto typeStmt = make_shared<TypeStmt>();
 			typeStmt->typeDeclare = typeDecl;
 
 			typeDecl->name = it->value;
 			typeDecl->type = DeclaredType::Record;
 			
 			it++;
-			_ASSERT( match(EQ));
+			match(EQ);
 			it++;
 			switch (it->tag)
 			{
 				case RECORD:
 					while ((it + 1)->tag != END)
 					{
-						VariableDecl *record1=parseVariable();
-						VariableStmt *varStmt = new VariableStmt;
+						auto record1=parseVariable();
+						auto varStmt = make_shared<VariableStmt>();
 						varStmt->varDeclare = record1;
 						typeDecl->vars.push_back(record1);
 						typeStmt->varStmts.push_back(varStmt);
 					}
+					it++;//match(END);
 					it++;
-					//match(END);
-					it++;
-					_ASSERT(match(SEMI));
+					match(SEMI);
 					break;
 				default:
 					break;
 			}
-			symTable->add(typeDecl->name, typeDecl);
-			currNode->addNode(typeStmt);
+			typeRootVal->typeRoot.push_back(typeStmt);
 		}
+		currNode->addNode(typeRootVal);
+		return typeRootVal;
 	}
 
-	void Parser::parseConstant()
+	shared_ptr<ConstantStmt> Parser::parseConstant()
 	{
-		SymbolTable *symTable = new SymbolTable;
+		shared_ptr<ConstantStmt> rootVal = make_shared<ConstantStmt>();
+		rootVal->constDeclare = NULL;
 		it++;
 		while (it->tag == IDENT)
 		{
-			ConstantDecl *constDecl=new ConstantDecl;
-			ConstantStmt *constStmt = new ConstantStmt;
+			auto constDecl= make_shared<ConstantDecl>();
+			auto constStmt = make_shared<ConstantStmt>();
 			constStmt->constDeclare = constDecl;
 			constDecl->name = it->value;
 			constDecl->type = DeclaredType::Constant;
 			it++;
-			_ASSERT(match(Colon));
+			match(BIND);
 			it++;
 			constDecl->value = *it;
 			it++;
-			_ASSERT(match(SEMI));
+			match(SEMI);
 			++it;
-			symTable->add(constDecl->name, constDecl);
-			currNode->addNode(constStmt);
+			rootVal->constRoot.push_back(constStmt);
 		}
-		symStack->push(symTable);
+		currNode->addNode(rootVal);
+		it--;
+		return rootVal;
 	}
 
-	AssignStmt* Parser::parseAssign()
+	shared_ptr<AssignStmt> Parser::parseAssign()
 	{
-		AssignStmt *assign = new AssignStmt;
-		Expression *exp = new Expression;
+		auto assign = make_shared<AssignStmt>();
+		auto exp = make_shared<Expression>();
 		exp->value = *it;
 		assign->left = exp;
 		it++;
-		_ASSERT(match(BIND));
+		match(BIND);
 		assign->value = *it;
 		it++;
 		assign->right = parseExpression();
 		//it++;
-		_ASSERT(match(SEMI)||match(TO));
+		if (!(find(SEMI) || find(TO)))
+		{
+			Error err("syntax error", *it);
+			errList.push_back(err);
+		}
 		//记录赋值表达式的id到符号表
 		return assign;
 	}
 
-	ComparisonExp* Parser::parseComparison()//there must be an error
+	shared_ptr<ComparisonExp> Parser::parseComparison()//there must be an error
 	{
-		ComparisonExp *compareStmt = new ComparisonExp;
-		Expression *exp = parseExpression();
+		auto compareStmt = shared_ptr<ComparisonExp>();
+		auto exp = parseExpression();
 		compareStmt->left = exp;
 		it++;
 		compareStmt->op = *it;
@@ -466,10 +529,25 @@ namespace swd
 		return compareStmt;
 	}
 
-	Expression* Parser::parseExpression()
+	shared_ptr<Expression> Parser::parseExpression()
 	{
-		Expression *rootExp = parseExpression1();
+		auto rootExp = parseExpression1();
 		it++;
+		
+		while (it->tag == OR || it->tag == AND)
+		{
+			auto opExp = make_shared<Expression>();
+			opExp->addNode(rootExp);
+			opExp->value = *it;
+			it++;
+			opExp->addNode(parseExpression1());
+			rootExp = opExp;
+		}
+		return rootExp;
+	}
+
+	shared_ptr<Expression> Parser::parseExpression1()
+	{
 		Tag tags[] = { EQ, UNEQ, LT, GT, LE, GE };
 
 		auto isRealOp = [&](Tag t){
@@ -482,28 +560,11 @@ namespace swd
 			}
 			return false;
 		};
-		if (isRealOp(it->tag))
-		{
-			while (isRealOp(it->tag))
-			{
-				Expression *opExp = new Expression;
-				opExp->addNode(rootExp);
-				opExp->value = *it;
-				it++;
-				opExp->addNode(parseExpression1());
-				rootExp = opExp;
-			}
-		}
-		return rootExp;
-	}
-
-	Expression* Parser::parseExpression1()
-	{
-		Expression *rootExp = parseTerm();
+		auto rootExp = parseTerm();
 		it++;
-		while (it->tag == ADD || it->tag == SUB || it->tag == OR )
+		while (it->tag == ADD || it->tag == SUB || isRealOp(it->tag))
 		{
-			Expression *opExp = new Expression;
+			auto opExp = make_shared<Expression>();
 			opExp->addNode(rootExp);
 			opExp->value = *it;
 			it++;
@@ -511,21 +572,21 @@ namespace swd
 			rootExp = opExp;
 			it++;
 		}
-		if (!(it->tag == ADD || it->tag == SUB || it->tag == OR))
+		if (!(it->tag == ADD || it->tag == SUB || isRealOp(it->tag)))
 		{
 			it--;
 		}
 		return rootExp;
 	}
 
-	Expression* Parser::parseTerm()
+	shared_ptr<Expression> Parser::parseTerm()
 	{
-		Expression *rootExp = parseFactor();
+		auto rootExp = parseFactor();
 		it++;
 		
-		while (it->tag == MUL || it->tag == DIV || it->tag == AND)
+		while (it->tag == MUL || it->tag == DIV )
 		{
-			Expression *opExp = new Expression;
+			auto opExp = make_shared<Expression>();
 			opExp->value = *it;
 			opExp->addNode(rootExp);
 			it++;
@@ -533,51 +594,56 @@ namespace swd
 			rootExp = opExp;
 			it++;
 		}
-		if (!(it->tag == MUL || it->tag == DIV || it->tag == AND))
+		if (!(it->tag == MUL || it->tag == DIV))
 		{
 			it--;
 		}
 		return rootExp;
 	}
 
-	Expression* Parser::parseFactor()
+	shared_ptr<Expression> Parser::parseFactor()
 	{
 		if (it->tag == IDENT || it->tag == INT || it->tag == FLOAT)
 		{
-			Expression *exp = new Expression;
+			auto exp = make_shared<Expression>();
 			exp->value = *it;
 			return exp;
 		}
 		else if (it->tag == OpenBracket)
 		{
-			Expression *exp = parseExpression();
+			auto exp = parseExpression();
 			match(CloseBracket);
 			return exp;
 		}
 	}
 
-	Statement* Parser::parseStmtList(Tag teminator)
+	shared_ptr<Statement> Parser::parseStmtList(Tag teminator)
 	{
-		Statement *stList = new Statement;
+		auto tmpNode = currNode;
+		shared_ptr<Statement> stList = make_shared<Statement>();
+		currNode = stList;//所有子节点将加入到block上
+
 		stList->value = *it;
 		it++;
 		while (it->tag != teminator)
 		{
 			if (it->tag == END && teminator != END)//处理begin..end的匹配情况
 			{
-				Statement *st1 = new Statement;
+				shared_ptr<Statement> st1 = make_shared<Statement>();
 				st1->value = *it;
 				stList->addNode(st1);
 				it++;
 			}
-			Statement *st = parseStatement();
+			shared_ptr<Statement> st = parseStatement();
 			stList->addNode(st);
 			it++;
 		}
+		//恢复currNode
+		currNode = tmpNode;
 		return stList;
 	}
 	//Core Method
-	Statement* Parser::parseStatement()
+	shared_ptr<Statement> Parser::parseStatement()
 	{
 		Tag tags[] = { EQ, UNEQ, LT, GT, LE, GE };
 
@@ -599,14 +665,14 @@ namespace swd
 			case IDENT://此处默认为赋值表达式，实际上大错特错，如果是 函数调用 何如?
 				if (advance(BIND))
 				{
-					AssignStmt *assign = parseAssign();
-					currNode->addNode(assign);
+					shared_ptr<AssignStmt> assign = parseAssign();
+					//currNode->addNode(assign);
 					return assign;
 				}
-				else if (advance(BIND))
+				else if (advance(OpenBracket))
 				{
-					FuncCall *funcCall = static_cast<FuncCall*>(parseFunctionCall());
-					currNode->addNode(funcCall);
+					shared_ptr<FuncCall> funcCall = parseFunctionCall();
+					//currNode->addNode(funcCall);
 					return funcCall;
 				}
 			//暂不支持嵌套函数
@@ -616,42 +682,42 @@ namespace swd
 				break;*/
 			case IF:
 			{
-				Node* tmp = currNode;
-				IfStmt *ifstmt = static_cast<IfStmt*>(parseIf());
+				shared_ptr<Node> tmp = currNode;
+				shared_ptr<IfStmt> ifstmt = static_pointer_cast<IfStmt>(parseIf());
 				currNode = tmp;
-				currNode->addNode(ifstmt);
+				//currNode->addNode(ifstmt);
 				return ifstmt; 
 			}
 			case WHILE:
 			{
-				Node* tmp = currNode;
-				WhileStmt *whStmt = static_cast<WhileStmt*>(parseWhile());
+				shared_ptr<Node> tmp = currNode;
+				shared_ptr<WhileStmt> whStmt = static_pointer_cast<WhileStmt>(parseWhile());
 				currNode = tmp;
-				currNode->addNode(whStmt);
+				//currNode->addNode(whStmt);
 				return whStmt; 
 			}
 			case REPEAT:
 			{
-				Node* tmp = currNode;
-				RepeatStmt *repeatStmt = static_cast<RepeatStmt*>(parseRepeat());
+				shared_ptr<Node> tmp = currNode;
+				shared_ptr<RepeatStmt> repeatStmt = static_pointer_cast<RepeatStmt>(parseRepeat());
 				currNode = tmp;
-				currNode->addNode(repeatStmt);
+				//currNode->addNode(repeatStmt);
 				return repeatStmt; 
 			}
 			case FOR:
 			{
-				Node* tmp = currNode;
-				ForStmt *forStmt = static_cast<ForStmt*>(parseFor());
+				shared_ptr<Node> tmp = currNode;
+				shared_ptr<ForStmt> forStmt = static_pointer_cast<ForStmt>(parseFor());
 				currNode = tmp;
-				currNode->addNode(forStmt);
+				//currNode->addNode(forStmt);
 				return forStmt; 
 			}
 			case CASE:
 			{
-				Node* tmp = currNode;
-				CaseStmt *caseStmt = static_cast<CaseStmt*>(parseCase());
+				shared_ptr<Node> tmp = currNode;
+				shared_ptr<CaseStmt> caseStmt = static_pointer_cast<CaseStmt>(parseCase());
 				currNode = tmp;
-				currNode->addNode(caseStmt);
+				//currNode->addNode(caseStmt);
 				return caseStmt; 
 			}
 			default:
@@ -660,29 +726,28 @@ namespace swd
 		return NULL;
 	}
 
-	Statement* Parser::parseIf()
+	shared_ptr<Statement> Parser::parseIf()
 	{
-		IfStmt *ifstmt = new IfStmt;
+		shared_ptr<IfStmt> ifstmt = make_shared<IfStmt>();
 		ifstmt->value = *it;
 		currNode = ifstmt;
 		it++;
-		Expression* cond = parseExpression();
+		auto cond = parseExpression();
 		ifstmt->condition = cond;
-		it++;
-		_ASSERT(match(THEN));
+		match(THEN);
 		it++;
 		if (match(BEGIN))
 		{
 			currNode = ifstmt;
-			Statement *body = parseStmtList(END);
+			shared_ptr<Statement> body = parseStmtList(END);
 			ifstmt->thenBody=body;
-			_ASSERT(match(END));
+			match(END);
 			it++;
-			_ASSERT(match(SEMI));
+			match(SEMI);
 		}
 		else
 		{
-			Statement *body1 = parseStatement();
+			shared_ptr<Statement> body1 = parseStatement();
 			ifstmt->thenBody = body1;
 		}
 		ifstmt->haveElse = false;
@@ -690,113 +755,113 @@ namespace swd
 		{
 			ifstmt->haveElse = true;
 			it++;
-			ElseStmt *elseStmt = static_cast<ElseStmt*>(parseElse());
+			shared_ptr<ElseStmt> elseStmt = static_pointer_cast<ElseStmt>(parseElse());
 			ifstmt->elseBody = elseStmt;
 		}
 		return ifstmt;
 	}
 
-	Statement* Parser::parseElse()
+	shared_ptr<Statement> Parser::parseElse()
 	{
-		ElseStmt *elseStmt = new ElseStmt;
+		shared_ptr<ElseStmt> elseStmt = make_shared<ElseStmt>();
 		elseStmt->value = *it;
 		it++;
 		if (match(IF))//match if
 		{
-			IfStmt *elseifnode = static_cast<IfStmt*>(parseIf());
+			shared_ptr<IfStmt> elseifnode = static_pointer_cast<IfStmt>(parseIf());
 			elseStmt->addNode(elseifnode);
 		}
 		else if (match(BEGIN))//match begin Compound Statement 复合语句
 		{
-			Statement *body = parseStmtList(END);
+			shared_ptr<Statement> body = parseStmtList(END);
 			elseStmt->body = body;
-			_ASSERT(match(END));
+			match(END);
 			it++;
-			_ASSERT(match(SEMI));
+			match(SEMI);
 		}
 		else//单行语句
 		{
-			Statement *body1 = parseStatement();
+			shared_ptr<Statement> body1 = parseStatement();
 			elseStmt->addNode(body1);
 		}
 		return elseStmt;
 	}
 
-	Statement* Parser::parseWhile()
+	shared_ptr<Statement> Parser::parseWhile()
 	{
-		WhileStmt *whStmt = new WhileStmt;
+		shared_ptr<WhileStmt> whStmt = make_shared<WhileStmt>();
 		whStmt->value = *it;
 		currNode = whStmt;
 		it++;
-		Expression* cond = parseExpression();
+		shared_ptr<Expression> cond = parseExpression();
 		whStmt->condition = cond;
-		it++;
-		_ASSERT(match(DO));
+		//it++;
+		match(DO);
 		it++;
 		if (match(BEGIN))
 		{
-			Statement *body = parseStmtList(END);
+			shared_ptr<Statement> body = parseStmtList(END);
 			whStmt->body=body;
-			_ASSERT(match(END));
+			match(END);
 			it++;
-			_ASSERT(match(SEMI));
+			match(SEMI);
 		}
 		else
 		{
-			Statement *body1 = parseStatement();
+			shared_ptr<Statement> body1 = parseStatement();
 			whStmt->body = body1;
 		}
 		return whStmt;
 	}
 
-	Statement* Parser::parseRepeat()
+	shared_ptr<Statement> Parser::parseRepeat()
 	{
-		RepeatStmt *repeatStmt = new RepeatStmt;
+		shared_ptr<RepeatStmt> repeatStmt = make_shared<RepeatStmt>();
 		currNode = repeatStmt;
-		Statement *body=parseStmtList(UNTIL);
+		shared_ptr<Statement> body=parseStmtList(UNTIL);
 		repeatStmt->body = body;
-		_ASSERT(match(UNTIL));
-		Expression *cond = parseExpression();
+		match(UNTIL);
+		shared_ptr<Expression> cond = parseExpression();
 		repeatStmt->untilCond = cond;
 		return repeatStmt;
 	}
 
-	Statement* Parser::parseCase()
+	shared_ptr<Statement> Parser::parseCase()
 	{
-		CaseStmt *caseStmt = new CaseStmt;
+		shared_ptr<CaseStmt> caseStmt = make_shared<CaseStmt>();
 		caseStmt->value = *it;
 		currNode = caseStmt;
 
-		Expression *cond = parseExpression();
+		shared_ptr<Expression> cond = parseExpression();
 		caseStmt->condition = cond;
-		_ASSERT(match(OF));
+		match(OF);
 
 		while (it->tag == INT || it->tag == CHAR)
 		{
-			Statement *branch = parseCaseBranch();
+			shared_ptr<Statement> branch = parseCaseBranch();
 			caseStmt->body.push_back( branch);
 			it++;
 		}
-		_ASSERT(match(END));
+		match(END);
 		it++;
-		_ASSERT(match(SEMI));
+		match(SEMI);
 		return caseStmt;
 	}
 
-	Statement* Parser::parseCaseBranch()
+	shared_ptr<Statement> Parser::parseCaseBranch()
 	{
-		Statement *caseBranch = new Statement;
-		Expression *constNode = parseCaseConst();
+		shared_ptr<Statement> caseBranch = make_shared<Statement>();
+		shared_ptr<Expression> constNode = parseCaseConst();
 		caseBranch->addNode(constNode);
-		_ASSERT(match(Colon));
-		Statement *st = parseStatement();
+		match(Colon);
+		shared_ptr<Statement> st = parseStatement();
 		caseBranch->addNode(st);
 		return caseBranch;
 	}
 
-	Expression* Parser::parseCaseConst()
+	shared_ptr<Expression> Parser::parseCaseConst()
 	{
-		Expression *constNode = new Expression;
+		shared_ptr<Expression> constNode = make_shared<Expression>();
 		while (it->tag == INT || it->tag == CHAR)
 		{
 			constNode->addNode(parseExpression());
@@ -809,12 +874,12 @@ namespace swd
 		return constNode;
 	}
 
-	Statement* Parser::parseFunctionCall()
+	shared_ptr<FuncCall> Parser::parseFunctionCall()
 	{
-		FuncCall *funcCall = new FuncCall;
+		shared_ptr<FuncCall> funcCall = make_shared<FuncCall>();
 		funcCall->funcName = it->value;
 		++it;
-		_ASSERT(match(OpenBracket));
+		match(OpenBracket);
 		++it;
 		Tag arg[] = { Tag::INT, Tag::CHAR, Tag::FLOAT, Tag::BOOL, Tag::STRING, Tag::IDENT };
 		auto isArg = [&](Tag tag){
@@ -831,78 +896,77 @@ namespace swd
 		{
 			funcCall->constants.push_back(*it);
 			it++;
+			if (it->tag != CloseBracket)
+			{
+				match(Comma);
+				it++;
+			}
+			else
+				break;
 		}
-		_ASSERT(match(CloseBracket));
+		match(CloseBracket);
 		it++;
-		_ASSERT(match(SEMI));
+		match(SEMI);
 		return funcCall;
 	}
 
-	Statement* Parser::parseFor()
+	shared_ptr<Statement> Parser::parseFor()
 	{
-		ForStmt *forStmt = new ForStmt;
+		//for k=1 to 10 do 
+		shared_ptr<ForStmt> forStmt = make_shared<ForStmt>();
 		forStmt->value = *it;
 		currNode = forStmt;
 		it++;
-		AssignStmt *startVal = static_cast<AssignStmt*>(parseStatement());
-		forStmt->startValue = startVal;
+		shared_ptr<AssignStmt> startVal = static_pointer_cast<AssignStmt>(parseStatement());
+		forStmt->startStmt = startVal;
 
 		Tag direction=it->tag;
 		forStmt->direction = direction;
-		_ASSERT(match(TO)||match(DOWNTO));
-
-		Expression *opExp = new Expression;
-		Token lt;
-		Statement *assignVal = new Statement;
-		Expression *arithNode = new Expression;
-
-		//k<n;k:=k+1 生成 小于 加1 两个表达式
-		lt.line = it->line;
-		lt.tag = LT;
-		lt.value = direction==TO?"<":">";
-		opExp->value = lt;
-		opExp->addNode(startVal->left);//获取循环的变量值
+		bool tmpCheck=find(TO)||find(DOWNTO);
+		if (!tmpCheck)
+		{
+			Error err("syntax error", *it);
+			errList.push_back(err);
+		}
 		it++;
-		Expression *endVal = parseExpression();
-		opExp->addNode(endVal);
-			
-		lt.line = it->line;
-		lt.tag = BIND;
-		lt.value = ":=";
-		assignVal->value = lt;
-		assignVal->addNode(startVal->left);
+		auto endVal = parseExpression();
+		forStmt->endValue = endVal;
 
-		lt.line = it->line;
-		lt.tag = ADD;
-		lt.value = direction == TO ? "+":"-";
-		arithNode->value = lt;
-		arithNode->addNode(startVal->left);
-
-		lt.line = it->line;
-		lt.tag = INT;
-		lt.value = "1";
-		Expression *expOne = new Expression;
-		expOne->value = lt;
-		arithNode->addNode(expOne);
-
-		assignVal->addNode(arithNode);
-		forStmt->endValue = opExp;
-		forStmt->nextValue = assignVal;
-		_ASSERT(match(DO));
+		match(DO);
 		it++;
 		if (match(BEGIN))
 		{
-			Statement *body = parseStmtList(END);
+			shared_ptr<Statement> body = parseStmtList(END);
 			forStmt->body = body ;
-			_ASSERT(match(END));
+			match(END);
 			it++;
-			_ASSERT(match(SEMI));
+			match(SEMI);
 		}
 		else
 		{
-			Statement *body1 = parseStatement();
+			shared_ptr<Statement> body1 = parseStatement();
 			forStmt->body = body1;
 		}
 		return forStmt;
 	}
 }
+/*
+if (isFunction)
+{
+if (symStack->lookup(funcStmt->funcName) != NULL)
+{
+shared_ptr<Declaration> decl = symStack->lookup(funcStmt->funcName);
+symStack->pop();
+shared_ptr<SymbolTable> symTable2 = symStack->getTable(symStack->currNestLevel);
+symTable2->add(funcStmt->funcName, decl);
+}
+else
+{
+Error err("Function无返回值,请书写返回值", *it);
+errList.push_back(err);
+}
+}
+else{
+symStack->pop();
+}
+*/

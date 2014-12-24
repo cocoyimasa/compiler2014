@@ -83,15 +83,22 @@
     <ClInclude Include="lexer.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="PascalAst.h" />
+    <ClInclude Include="SemanticAnalyzer.h" />
+    <ClInclude Include="SemanticAnalyzerBase.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SymbolTable.h" />
+    <ClInclude Include="VirtualMachine.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="lexer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="PascalAst.cpp" />
+    <ClCompile Include="SemanticAnalyzer.cpp" />
+    <ClCompile Include="SemanticAnalyzerBase.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
+    <ClCompile Include="VirrualMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

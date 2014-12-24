@@ -1,6 +1,7 @@
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #define _SCL_SECURE_NO_WARNINGS
+#define _CRTDBG_MAP_ALLOC
 #include <iostream>
 #include <stdio.h>
 #include <memory>
@@ -8,7 +9,7 @@
 #include <vector>
 #include <iterator>
 #include <map>
-#include <cstdlib>
+#include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>
 #ifdef _DEBUG
@@ -16,7 +17,6 @@
 #else
 #define DEBUG_CLIENTBLOCK
 #endif
-#define _CRTDBG_MAP_ALLOC
 
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK

@@ -1,55 +1,65 @@
 #pragma once
 #include "lexer.h"
 #include "SymbolTable.h"
-#include "CodeGen.h"
+namespace compiler
+{
+	class IRCodeGen;
+}
 namespace swd{
+	
+	class SemanticAnalyzerBase;
 	class Node
 	{
 	public:
 		Token value;
-		Node *parent;
-		std::vector<Node*> list;
+		shared_ptr<Node> parent;
+		std::vector<shared_ptr<Node>> list;
 		Node(){}
 		virtual bool operator=(Node &node);
-		virtual void addNode(Node *node)
+		virtual void addNode(shared_ptr<Node> node)
 		{
 			list.push_back(node);
 		}
 		virtual void print();
 		virtual ~Node(){}
-		virtual void genCode(IRCodeGen *visitor);
+		virtual void accept(SemanticAnalyzerBase *visitor);
+		virtual void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class Statement :public Node
 	{
 	public:
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class Expression :public Node
 	{
 	public:
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 	class AssignStmt :public Statement
 	{
 	public:
-		Expression *left;
-		Expression *right;
+		shared_ptr<Expression> left;
+		shared_ptr<Expression> right;
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class ComparisonExp :public Expression
 	{
 	public:
-		Expression *left;
-		Expression *right;
+		shared_ptr<Expression> left;
+		shared_ptr<Expression> right;
 		Token op;
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class FuncCall :public Statement
@@ -57,97 +67,114 @@ namespace swd{
 	public:
 		std::string funcName;
 		std::vector<Token> constants;
-		void genCode(IRCodeGen *visitor);
+		void print();
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class IfStmt :public Statement
 	{
 	public:
-		Expression* condition;
-		Statement* thenBody;
-		Statement* elseBody;
+		shared_ptr<Expression> condition;
+		shared_ptr<Statement> thenBody;
+		shared_ptr<Statement> elseBody;
 		bool haveElse;
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class ElseStmt :public Statement
 	{
 	public:
-		Statement* body;
-		void genCode(IRCodeGen *visitor);
+		shared_ptr<Statement> body;
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class WhileStmt :public Statement
 	{
 	public:
-		Expression* condition;
-		Statement* body;
+		shared_ptr<Expression> condition;
+		shared_ptr<Statement> body;
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class RepeatStmt :public Statement
 	{
 	public:
-		Expression* untilCond;
-		Statement* body;
+		shared_ptr<Expression> untilCond;
+		shared_ptr<Statement> body;
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class ForStmt :public Statement
 	{
 	public:
-		Statement *startValue;
+		shared_ptr<Statement> startStmt;
 		Tag direction;
-		Expression *endValue;
-		Statement *nextValue;
-		Statement* body;
+		shared_ptr<Expression> endValue;
+		//shared_ptr<Statement> nextValue;
+		shared_ptr<Statement> body;
 		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class CaseStmt :public Statement
 	{
 	public:
-		Expression *condition;
-		vector<Statement*> body;
+		shared_ptr<Expression> condition;
+		vector<shared_ptr<Statement> > body;
 		void print();
-		void genCode(IRCodeGen *visitor);
-	};
-
-	class FunctionStmt :public Statement
-	{
-	public:
-		std::string funcName;
-		std::vector<VariableStmt*> arguments;
-		//std::vector<VariableStmt*> decls;//去nodelist里找吧
-		Token retType;
-		Statement *body;
-		void print();
-		void genCode(IRCodeGen *visitor);
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class VariableStmt :public Statement
 	{
 	public:
-		VariableDecl *varDeclare;
-		void genCode(IRCodeGen *visitor);
+		shared_ptr<VariableDecl> varDeclare;
+		vector<shared_ptr<VariableStmt>> varRoot;
+		void print();
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
+	};
+
+	class FunctionStmt :public Statement
+	{
+	public:
+		shared_ptr<FunctionDecl> funcDecl;
+		//std::vector<VariableStmt*> decls;//去nodelist里找吧
+		shared_ptr<Statement> body;
+		//shared_ptr<Statement> returnVal;
+		void print();
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class TypeStmt :public Statement
 	{
 	public:
-		TypeDecl *typeDeclare;
-		std::vector<VariableStmt*> varStmts;
-		void genCode(IRCodeGen *visitor);
+		shared_ptr<TypeDecl> typeDeclare;
+		std::vector<shared_ptr<VariableStmt> > varStmts;
+		std::vector<shared_ptr<TypeStmt> > typeRoot;
+		void print();
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 
 	class ConstantStmt :public Statement
 	{
 	public:
-		ConstantDecl *constDeclare;
-		void genCode(IRCodeGen *visitor);
+		shared_ptr<ConstantDecl> constDeclare;
+		vector<shared_ptr<ConstantStmt>> constRoot;
+		void print();
+		void accept(SemanticAnalyzerBase *visitor);
+		void genCode(compiler::IRCodeGen *visitor);
 	};
 }

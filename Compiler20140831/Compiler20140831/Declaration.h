@@ -38,13 +38,13 @@ namespace swd
 	class TypeDecl :public Declaration //只支持record 不支持数组和枚举
 	{
 	public:
-		vector<VariableDecl*> vars;
+		vector<shared_ptr<VariableDecl> > vars;
 	};
 
 	class FunctionDecl :public Declaration
 	{
 	public:
-		std::vector<VariableDecl*> vars;
+		std::vector<shared_ptr<VariableDecl> > vars;
 		std::string returnType;
 	};
 }

@@ -2,49 +2,75 @@
 
 namespace swd
 {
-	void SymbolTable::add(std::string key, Declaration *val)
+	void SymbolTable::add(std::string key, shared_ptr<Declaration> val)
 	{
 		if (lookup(key) == NULL)
 		{
-			this->symTbl.insert(pair<string, Declaration*>(key, val));
+			symTbl.insert(pair<string, shared_ptr<Declaration>>(key, val));
 		}
 	}
 
-	Declaration* SymbolTable::lookup(std::string key)
+	shared_ptr<Declaration> SymbolTable::lookup(std::string key)
 	{
-		if (this->symTbl.find(key)!=symTbl.end())
+		if (symTbl.empty())
+		{
+			return NULL;
+		}
+		if (!symTbl.empty() && symTbl.find(key) != symTbl.end())
 		{
 			return symTbl[key];
 		}
 		return NULL;
 	}
 
-	Declaration* SymbolTableStack::lookup(std::string val)
+	shared_ptr<Declaration> SymbolTableStack::lookup(std::string val)
 	{
+		if (symTbls.empty())
+		{
+			return NULL;
+		}
 		for (int i = currNestLevel; i >= 0; i--)
 		{
-			if (symTbls[i]->lookup(val) != NULL)
-			{
-				return symTbls[i]->lookup(val);
-			}
+			shared_ptr<Declaration> decl = symTbls[currNestLevel]->lookup(val);
+			if (decl!=NULL)
+				return decl;
 		}
 		return NULL;
 	}
 
-	void SymbolTableStack::push(SymbolTable *tableName)
+	shared_ptr<Declaration> SymbolTableStack::lookup(std::string val,bool isDecl)
 	{
-		symTbls.insert(pair<int, SymbolTable*>(currNestLevel, tableName));
-		currNestLevel++;
+		if (!isDecl)return NULL;
+		if (symTbls.empty())
+		{
+			return NULL;
+		}
+		shared_ptr<Declaration> decl = symTbls[currNestLevel]->lookup(val);
+		return decl;
 	}
 
-	SymbolTable* SymbolTableStack::getTable(int level)
+	void SymbolTableStack::push(shared_ptr<SymbolTable> tableName)
 	{
-		return symTbls[level];
+		currNestLevel++;
+		symTbls.insert(pair<int, shared_ptr<SymbolTable> >(currNestLevel, tableName));
+	}
+
+	shared_ptr<SymbolTable> SymbolTableStack::getTable(int level)
+	{
+		if (!symTbls.empty())
+		{
+			return symTbls[level];
+		}
+		return NULL;
 	}
 
 	void SymbolTableStack::pop()
 	{
-		for (map<int, SymbolTable*>::iterator it = symTbls.begin(); 
+		if (symTbls.empty())
+		{
+			return;
+		}
+		for (map<int, shared_ptr<SymbolTable> >::iterator it = symTbls.begin();
 			 it != symTbls.end();
 			 ++it)
 		{

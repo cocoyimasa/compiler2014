@@ -27,46 +27,45 @@ namespace swd
 		std::vector<Error> errList;
 		//Maybe there should be a attribute called SCOPE
 		//--to be implemented
-		SymbolTableStack *symStack;
-		Node* root;
+		
+		shared_ptr<Node> root;
 	protected:
-		Node* currNode;
+		shared_ptr<Node> currNode;
 		Lexer *lex;
 	public:
 		Parser(Lexer *l)
 		{
 			lex = l;
 			it = lex->tokenStream.begin();
-			/*root = new Node;
-			currNode = root;*/
 		}
+		bool find(Tag t);
 		bool advance(Tag t);
 		bool match(Tag t);
 		void parseProgram();
 		void parseBlock();
-		VariableDecl* parseVariable();
-		void parseVariables();
-		void parseType();
-		void parseConstant();
-		AssignStmt* parseAssign();
-		ComparisonExp* parseComparison();
-		Expression* parseExpression();
-		Expression* parseExpression1();
-		Expression* parseTerm();
-		Expression* parseFactor();
-		Statement* parseStmtList(Tag teminator);
-		Statement* parseStatement();
-		Statement* parseIf();
-		Statement* parseElse();
-		Statement* parseWhile();
-		Statement* parseRepeat();
-		Statement* parseCase();
-		Statement* parseCaseBranch();
-		Statement* parseFor();
-		Expression* parseCaseConst();
-		Statement* parseFunctionCall();
-		Statement* parseFunction();
-		Statement* parseProcedure();
-		Statement* parseProcedureBase(bool isFunction);
+		shared_ptr<VariableDecl> parseVariable();
+		shared_ptr<VariableStmt> parseVariables();
+		shared_ptr<TypeStmt> parseType();
+		shared_ptr<ConstantStmt> parseConstant();
+		shared_ptr<AssignStmt> parseAssign();
+		shared_ptr<ComparisonExp> parseComparison();
+		shared_ptr<Expression> parseExpression();
+		shared_ptr<Expression> parseExpression1();
+		shared_ptr<Expression> parseTerm();
+		shared_ptr<Expression> parseFactor();
+		shared_ptr<Statement> parseStmtList(Tag teminator);
+		shared_ptr<Statement> parseStatement();
+		shared_ptr<Statement> parseIf();
+		shared_ptr<Statement> parseElse();
+		shared_ptr<Statement> parseWhile();
+		shared_ptr<Statement> parseRepeat();
+		shared_ptr<Statement> parseCase();
+		shared_ptr<Statement> parseCaseBranch();
+		shared_ptr<Statement> parseFor();
+		shared_ptr<Expression> parseCaseConst();
+		shared_ptr<FuncCall> parseFunctionCall();
+		shared_ptr<Statement> parseFunction();
+		shared_ptr<Statement> parseProcedure();
+		shared_ptr<Statement> parseProcedureBase(bool isFunction);
 	};
 }

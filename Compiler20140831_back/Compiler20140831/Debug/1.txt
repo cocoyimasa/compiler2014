@@ -1,0 +1,11 @@
+function a(a:int,b:bool);
+begin
+    a:= 10;
+	b :=true;
+	c: int;
+	c := c+a;
+	if(a=0 and b=true or c=20  )
+	begin
+	    a:=20;
+	end
+end	

@@ -36,6 +36,15 @@
     <ClInclude Include="PascalAst.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="SemanticAnalyzer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SemanticAnalyzerBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtualMachine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -51,6 +60,18 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CodeGen.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PascalAst.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SemanticAnalyzer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SemanticAnalyzerBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="VirrualMachine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

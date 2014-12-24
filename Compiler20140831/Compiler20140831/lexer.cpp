@@ -1,5 +1,9 @@
 #include "lexer.h"
-
+/*
+*@time 2014-08-31
+*@author wanghesai
+*All rights reserved
+*/
 //保存关键字宏定义
 #define RESERVE_KEYWORD(str,val)  keywords.insert(std::pair<std::string, Tag>(str, val));
 namespace swd
@@ -32,7 +36,7 @@ namespace swd
 		tokenStream.clear();
 		std::string keys[] = { "program", "if", "else", "while", "case", "repeat",
 			"until", "do", "break", "function", "procedure", "begin",
-			"end", "int", "bool", "char", "float", "string", "or",
+			"end", "integer", "bool", "char", "float", "string", "or",
 			"and", "then", "of", "var", "type", "for", "to", "downto", "record",
 			"const", "forword"
 		};
