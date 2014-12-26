@@ -1,0 +1,143 @@
+label start
+push 10
+store i
+load i
+push 10
+
+jmpf ifend1
+push 11
+store i
+push 3888
+store t1
+push 34.33
+store t2
+label ifend1
+label whileNext2
+load i
+push 10
+
+jmpf whileEnd3
+push 377
+store t1
+push 37337.376363
+store t2
+jmp whileNext2
+label whileEnd3
+push 0
+store k
+label ForNext4
+push 100
+load k
+cmp
+jmpf ForEnd5
+load k
+store i
+label _L6
+add k 1
+jmp ForNext4
+label ForEnd5
+push 10
+store i
+load i
+push 10
+
+jmpf ifend8
+push 11
+store i
+push 3888
+store t1
+push 34.33
+store t2
+label ifend8
+label whileNext9
+load i
+push 10
+
+jmpf whileEnd10
+push 377
+store t1
+push 37337.376363
+store t2
+jmp whileNext9
+label whileEnd10
+push 0
+store k
+label ForNext11
+push 100
+load k
+cmp
+jmpf ForEnd12
+load k
+store i
+label _L13
+add k 1
+jmp ForNext11
+label ForEnd12
+--------------------------------
+label start
+fconst PI 3.14159
+fconst E 2.1111
+iconst i
+iconst t1
+fconst t2
+iconst k
+iconst anc_c
+fconst anc_gfd
+fconst anc_ghdg122
+func testFunc
+param b
+push 10
+store a
+push 1000.22
+store b
+push 10
+store i
+load i
+push 10
+eq
+jmpf ifend1
+push 11
+store i
+push 3888
+store t1
+push 34.33
+store t2
+push 200
+push 300
+call testFunc
+label ifend1
+load i
+push 10
+gt
+jmpf ifend3
+push 11
+store i
+push 3888
+store t1
+push 34.33
+store t2
+label ifend3
+label whileNext4
+load i
+push 10
+uneq
+jmpf whileEnd5
+push 377
+store t1
+push 37337.376363
+store t2
+jmp whileNext4
+label whileEnd5
+push 0
+store k
+label ForNext6
+push 100
+load k
+cmp
+jmpf ForEnd7
+load k
+store i
+label _L8
+add k 1
+jmp ForNext6
+label ForEnd7

@@ -51,7 +51,9 @@ namespace vm
 		VirtualMachine(compiler::IRCodeGen *generator, swd::SymbolTable *symTable);
 		void initRuntimeInfo();
 		void labelScan();
-		void run();
+		void scan();
 		void move();
+		void run();
+		void compute(char op);
 	};
 }
