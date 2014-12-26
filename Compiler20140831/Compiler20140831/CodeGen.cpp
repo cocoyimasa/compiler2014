@@ -411,7 +411,7 @@ namespace compiler{
 		//param
 		auto funcName = make_shared<IRCode>(OperationType::FUNC, node->name);
 		IRCodeFile.push_back(funcName);
-		for (int i = node->vars.size(); i >= 0;i--)//果然需要倒序入栈，TMD运行时需要pop栈中的实参，实参此时正好是倒序
+		for (int i = node->vars.size()-1; i >= 0;i--)//果然需要倒序入栈，TMD运行时需要pop栈中的实参，实参此时正好是倒序
 		{
 			auto item = node->vars[i];
 			auto funcParam = make_shared<IRCode>(OperationType::PARAM, item->name);

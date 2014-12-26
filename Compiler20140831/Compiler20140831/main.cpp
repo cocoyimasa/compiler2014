@@ -2,6 +2,7 @@
 #include "SemanticAnalyzer.h"
 #include "CodeGen.h"
 #include "SymbolTable.h"
+#include "VirtualMachine.h"
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -40,6 +41,8 @@ int main()
 		{
 			cout << item->toString() << endl;
 		}
+		vm::VirtualMachine myVM(&codeGen, symStack);
+		myVM.run();
 	}
 	getchar();
 	return 0;
