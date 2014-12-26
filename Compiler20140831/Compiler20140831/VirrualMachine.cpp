@@ -122,7 +122,25 @@ void VirtualMachine::compute(char op)
 		if (varStack.find((*it)->_op1) != varStack.end())
 		{
 			string val = varStack[(*it)->_op1];
+			switch (op)
+			{
+			case '+':
 			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) + atoi((*it)->_op2.c_str()));
+			break;
+			case '-':
+			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) - atoi((*it)->_op2.c_str()));
+			break;
+			case '*':
+			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) * atoi((*it)->_op2.c_str()));
+			break;
+			case '/':
+			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) / atoi((*it)->_op2.c_str()));
+			break;
+			default:
+			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) + atoi((*it)->_op2.c_str()));
+
+			}
+			
 		}
 	}
 }
