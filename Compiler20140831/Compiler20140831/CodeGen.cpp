@@ -1,4 +1,5 @@
 #include "CodeGen.h"
+#include "Declaration.h"
 /*
 *@time 2014-09-10~09-31
 *@author wanghesai
@@ -327,17 +328,10 @@ namespace compiler{
 		auto leStmt = make_shared<IRCode>(OperationType::CMP);
 		IRCodeFile.push_back(loadVar);
 		IRCodeFile.push_back(leStmt);
-		if (node->direction == Tag::TO){
-			//JMPF _L0
-			auto test1 = make_shared<IRCode>(OperationType::JMPF, codeGenInfo.labelEnd);
-			IRCodeFile.push_back(test1);
-		}
-		else
-		{
-			//JMPT _L0
-			auto test1 = make_shared<IRCode>(OperationType::JMPT, codeGenInfo.labelEnd);
-			IRCodeFile.push_back(test1);
-		}
+		
+		//JMPT _L0 标志位为true cmp结果为0时
+		auto test1 = make_shared<IRCode>(OperationType::JMPT, codeGenInfo.labelEnd);
+		IRCodeFile.push_back(test1);
 		//语句
 		node->body->genCode(this);
 		//LABEL _L2
@@ -417,8 +411,9 @@ namespace compiler{
 		//param
 		auto funcName = make_shared<IRCode>(OperationType::FUNC, node->name);
 		IRCodeFile.push_back(funcName);
-		for (auto item : node->vars)
+		for (int i = node->vars.size(); i >= 0;i--)//果然需要倒序入栈，TMD运行时需要pop栈中的实参，实参此时正好是倒序
 		{
+			auto item = node->vars[i];
 			auto funcParam = make_shared<IRCode>(OperationType::PARAM, item->name);
 			IRCodeFile.push_back(funcParam);
 		}

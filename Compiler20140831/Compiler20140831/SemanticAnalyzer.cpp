@@ -1,6 +1,8 @@
 #include "SemanticAnalyzer.h"
 #include "PascalAst.h"
 #include "parser.h"
+#include "SymbolTable.h"
+#include "Declaration.h"
 using namespace swd;
 /*
 *@time 2014-10-20
@@ -10,26 +12,17 @@ using namespace swd;
 */
 SemanticAnalyzer::SemanticAnalyzer()
 {
-	this->symStack = make_shared<SymbolTableStack>();
-	symStack->currNestLevel = 0;
+	this->symTable = new SymbolTable("global");
+	currentTable = symTable;
 }
-
 
 SemanticAnalyzer::~SemanticAnalyzer()
 {
 }
 void SemanticAnalyzer::visit(Node *node)
 {
-	//记录program名字入符号表 符号表项为名字 值 域
-	//---to be implemented
-	shared_ptr<SymbolTable> symTable = make_shared<SymbolTable>();
-	shared_ptr<Declaration> progDecl = make_shared<Declaration>();
-	progDecl->name = node->value.value;
-	progDecl->type = DeclaredType::Program;
-
-	symTable->tableName = node->value.value;
-	symTable->add(node->value.value, progDecl);
-	symStack->push(symTable);
+	//记录program名字入符号表
+	currentTable->add(node->value.value, node);
 	for (auto item : node->list)
 	{
 		item->accept(this);
@@ -44,75 +37,80 @@ void SemanticAnalyzer::visit(Statement* node)
 }
 void SemanticAnalyzer::visit(Expression* node)
 {
-	if (node->list.size() > 2)
-	{
-		for (auto item : node->list)
-		{
-			item->accept(this);
-		}
-	}
-	else if(node->list.size() == 2)
-	{
-		if (node->list[0]->value.tag != node->list[1]->value.tag)
-		{
-			Error err("type error.No operation is allowed in different type", node->value);
-			errList.push_back(err);
-		}
-	}
-	else
-	{
-		Error err("expression declared in a wrong way", node->value);
-		errList.push_back(err);
-	}
 	
 }
 void SemanticAnalyzer::visit(ComparisonExp* node)
 {
-	//--to be implemented
 }
 void SemanticAnalyzer::visit(AssignStmt* node)
 {
-	if (symStack->lookup(node->left->value.value))
-	{
-		//type ?
-		node->right->accept(this);
-	}
-	else
-	{
-		Error err("variable is not defined", node->value);
-		errList.push_back(err);
-	}
 }
 void SemanticAnalyzer::visit(FuncCall* node)
 {
-	shared_ptr<SymbolTable> symTable = symStack->getTable(symStack->currNestLevel);
 	
 }
 void SemanticAnalyzer::visit(IfStmt* node)
-{}
+{
+	SymbolTable *symTable1 = new SymbolTable();
+	currentTable->addInnerTable(symTable1);
+	symTable1->outer = currentTable;
+	currentTable = symTable1;
+	node->thenBody->accept(this);
+	if (node->haveElse)
+	{
+		node->elseBody->accept(this);
+	}
+	currentTable = symTable1->outer;
+}
 void SemanticAnalyzer::visit(ElseStmt* node)
-{}
+{
+}
 void SemanticAnalyzer::visit(WhileStmt* node)
-{}
+{
+	SymbolTable *symTable1 = new SymbolTable();
+	currentTable->addInnerTable(symTable1);
+	symTable1->outer = currentTable;
+	currentTable = symTable1;
+	node->body->accept(this);
+	currentTable = symTable1->outer;
+}
 void SemanticAnalyzer::visit(RepeatStmt* node)
-{}
+{
+	SymbolTable *symTable1 = new SymbolTable();
+	currentTable->addInnerTable(symTable1);
+	symTable1->outer = currentTable;
+	currentTable = symTable1;
+	currentTable = symTable1->outer;
+}
 void SemanticAnalyzer::visit(ForStmt* node)
-{}
+{
+	SymbolTable *symTable1 = new SymbolTable();
+	currentTable->addInnerTable(symTable1);
+	symTable1->outer = currentTable;
+	currentTable = symTable1;
+	node->body->accept(this);
+	currentTable = symTable1->outer;
+}
 void SemanticAnalyzer::visit(CaseStmt* node)
-{}
+{
+	//shared_ptr<SymbolTable> symTable1 = make_shared<SymbolTable>();
+	//symStack->push(symTable1);
+}
 void SemanticAnalyzer::visit(FunctionStmt* node)
 {
 	//Function declaration add in symbol table stack 
-	auto funcDeclTemp = node->funcDecl;
-	shared_ptr<SymbolTable> symTable = symStack->getTable(symStack->currNestLevel);
-	symTable->add(funcDeclTemp->name, funcDeclTemp);
+	currentTable->add(node->funcDecl->name, node);
 	//Creat local symbol table and add in the table stack
-	shared_ptr<SymbolTable> symTable1 = make_shared<SymbolTable>();
-	symStack->push(symTable1);
+	SymbolTable *symTable1 = new SymbolTable(node->funcDecl->name);
+	currentTable->addInnerTable(symTable1);
+	symTable1->outer = currentTable;
+	currentTable = symTable1;
 	//seems that the arguments is hard to be checked
-	for (auto item : funcDeclTemp->vars)
+	for (auto item : node->funcDecl->vars)
 	{
-		symTable1->add(item->name,item);
+		Expression *newnode=new Expression;
+		newnode->value = item->identity;
+		symTable1->add(item->name, newnode);
 	}
 	if (node->list.size() > 0)
 	{
@@ -120,51 +118,60 @@ void SemanticAnalyzer::visit(FunctionStmt* node)
 	}
 	//this->visit(node->body.get());
 	node->body->accept(this);
+	currentTable = symTable1->outer;
 }
 void SemanticAnalyzer::visit(VariableStmt* node)
 {
-	if (node->varDeclare != NULL)
-	{
-		//find if this variable name already exists 
-		if (symStack->lookup(node->varDeclare->name, true) != NULL)
-		{
-			Error err("variable redefined!", node->value);
-			errList.push_back(err);
-		}
-		else
-		{
-			symStack->symTbls[symStack->currNestLevel]->add(node->varDeclare->name, 
-																node->varDeclare);
-		}
-	}
-	//if variable is root var,visit the child
-	else if (node->varDeclare == NULL)
+	if (node->varDeclare == NULL)
 	{
 		for (auto item : node->varRoot)
 		{
-			item->accept(this);
+			if (currentTable->lookup(item->varDeclare->name) != NULL)
+			{
+				Error err("variable redefined!", item->varDeclare->identity);
+				errList.push_back(err);
+			}
+			else
+			{
+				currentTable->add(item->varDeclare->name, item.get());
+			}
 		}
 	}
 }
 void SemanticAnalyzer::visit(TypeStmt* node)
 {
-	shared_ptr<SymbolTable> symTable = symStack->getTable(symStack->currNestLevel);
-	for (auto item : node->typeRoot)
+	if (node->typeRoot.size() > 0)
 	{
-		symTable->add(item->typeDeclare->name, item->typeDeclare);
-		for (auto j : item->varStmts)
+		for (auto item : node->typeRoot)
 		{
-			symTable->add(item->typeDeclare->name +"_"+ j->varDeclare->name, item->typeDeclare);
+			currentTable->add(item->typeDeclare->name, item.get());
+			if (item->varStmts.size()>0)
+			{
+				for (auto j : item->varStmts)
+				{
+					//shared_ptr<VariableStmt> newnode(j);
+					currentTable->add(item->typeDeclare->name + "_" + j->varDeclare->name, j.get());
+				}
+			}
 		}
 	}
-	
 }
 void SemanticAnalyzer::visit(ConstantStmt* node)
 {
-	shared_ptr<SymbolTable> symTable = symStack->getTable(symStack->currNestLevel);
-	for (auto item : node->constRoot)
+	if (node->constDeclare == NULL && node->constRoot.size()>0)
 	{
-		//const is used only for integer as default
-		symTable->add(item->constDeclare->name, item->constDeclare);
+		for (auto item : node->constRoot)
+		{
+			if (currentTable->lookup(item->constDeclare->name) != NULL)
+			{
+				Error err("variable redefined!", node->value);
+				errList.push_back(err);
+			}
+			else
+			{
+				//shared_ptr<ConstantStmt> newnode(item);
+				currentTable->add(item->constDeclare->name, item.get());
+			}
+		}
 	}
 }

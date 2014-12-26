@@ -1,5 +1,5 @@
 #pragma once
-#include "PascalAst.h"
+#include "stdafx.h"
 namespace swd
 {
 	class   Node;

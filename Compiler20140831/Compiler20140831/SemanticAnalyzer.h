@@ -1,12 +1,15 @@
 #pragma once
 #include "SemanticAnalyzerBase.h"
+
 namespace swd
 {
+	class SymbolTable;
 	class Error;
 	class SemanticAnalyzer :public SemanticAnalyzerBase
 	{
 	public:
-		shared_ptr<SymbolTableStack> symStack;
+		SymbolTable *symTable;
+		SymbolTable *currentTable;
 		std::vector<Error> errList;
 		SemanticAnalyzer();
 		~SemanticAnalyzer();

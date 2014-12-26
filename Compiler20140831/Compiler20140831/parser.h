@@ -1,5 +1,4 @@
 #pragma once
-#include "SymbolTable.h"
 #include "PascalAst.h"
 namespace swd
 {

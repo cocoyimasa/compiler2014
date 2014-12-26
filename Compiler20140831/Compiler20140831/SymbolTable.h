@@ -1,34 +1,28 @@
 #pragma once
-#include "Declaration.h"
+#include "stdafx.h"
 
 namespace swd
 {
+	/*
+	符号表中所放置的为符号信息，比如变量a的相关属性（名字，类型）函数（名字，参数，返回值）之类
+	而不是变量取值
+	*/
+	class Node;
+
 	class SymbolTable
 	{
 	public:
-		string tableName;
-		std::map<std::string, shared_ptr<Declaration> > symTbl;
-		SymbolTable()
-		{
-			symTbl.clear();
-		}
-		void add(std::string key, shared_ptr<Declaration> val);
-		shared_ptr<Declaration> lookup(std::string key);
-	};
-
-	class SymbolTableStack
-	{
-	public:
-		int currNestLevel;
-		map<int, shared_ptr<SymbolTable> > symTbls;//k-v:level-table
-		SymbolTableStack()
-		{
-			symTbls.clear();
-		}
-		shared_ptr<Declaration> lookup(std::string val);
-		shared_ptr<Declaration> lookup(std::string val,bool isDecl);
-		void push(shared_ptr<SymbolTable> tableName);
-		void pop();
-		shared_ptr<SymbolTable> getTable(int level);
+		string name;
+		int tableIndex;
+		SymbolTable* outer;
+		vector<SymbolTable*> inner;
+		SymbolTable();
+		SymbolTable(string name);
+		std::map<std::string, swd::Node* > dict;
+		bool add(std::string key, Node* val);
+		bool addInnerTable(SymbolTable *innerTable);
+		SymbolTable* findInnerTable(string name);
+		Node* lookup(std::string key);
+		Node* lookupInScope(std::string key);
 	};
 }

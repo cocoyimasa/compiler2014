@@ -1,7 +1,7 @@
 #include "parser.h"
 #include "SemanticAnalyzer.h"
 #include "CodeGen.h"
-
+#include "SymbolTable.h"
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -11,12 +11,13 @@ int main()
 		lexer.scan();
 		/*for (auto i : lexer.tokenStream)
 		{
-		std::cout <<"<# "<< i.value << "  ||  " << i.tag <<"  ||   "<<i.line<<" #>"<< std::endl;
+		std::cout <<"{ "<< i.value << "  ||  " << i.tag <<"  ||   "<<i.line<<" }"<< std::endl;
 		}*/
-		shared_ptr<swd::SymbolTableStack> symStack = make_shared<swd::SymbolTableStack>();
-		symStack->currNestLevel = 0;
+		/*shared_ptr<swd::SymbolTable> symStack1 = NULL;
+		shared_ptr<swd::SymbolTable> symStack = make_shared<swd::SymbolTable>();*/
+		swd::SymbolTable *symStack = new swd::SymbolTable();
 		swd::Parser parser(&lexer);
-		//parser.symStack = symStack;
+
 		parser.parseProgram();
 		if (parser.errList.size() >= 1)
 		{
@@ -32,7 +33,7 @@ int main()
 		parser.root->print();
 		swd::SemanticAnalyzer semanticAnalyzer;
 		parser.root->accept(&semanticAnalyzer);
-		symStack = semanticAnalyzer.symStack;//defined above the parser object--
+		symStack = semanticAnalyzer.symTable;//defined above the parser object--
 		compiler::IRCodeGen codeGen;
 		parser.root->genCode(&codeGen);
 		for (auto item : codeGen.IRCodeFile)

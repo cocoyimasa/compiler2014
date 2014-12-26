@@ -1,30 +1,86 @@
 #include "VirtualMachine.h"
+#include "parser.h"
+#include "SymbolTable.h"
 using namespace vm;
 /*
 *@time 2014-12-24
 *@author wanghesai
 *All rights reserved
 */
+VirtualMachine::VirtualMachine()
+{
+	programCounter = 0;
+	reg_flag = false;
+	//it = generator->IRCodeFile.begin();
+	//this->labelScan();
+}
 VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator)
 {
+	programCounter = 0;
+	reg_flag = false;
 	this->generator = generator;
 	it = generator->IRCodeFile.begin();
+	this->labelScan();
+}
+VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator, 
+							   swd::SymbolTable *symTable)
+{
+	programCounter = 0;
+	reg_flag = false;
+	this->generator = generator;
+	this->symTable = symTable;
+	currentTable = symTable;
+	it = generator->IRCodeFile.begin();
+	this->labelScan();
+}
+
+void VirtualMachine::move()
+{
+	it++;
+	programCounter=it - generator->IRCodeFile.begin();//永远保持与it同步
+}
+
+void VirtualMachine::initRuntimeInfo()
+{
+	rtInfo.lastScope = "";
+	rtInfo.currentScope = "global";
+	rtInfo.vStackItems = vStack.size();
+	//rtInfo.varStackItems
+	rtInfo.constStackItems=constStack.size();
+	rtInfo.paramNum=0;
+}
+
+void VirtualMachine::labelScan()
+{
+	vector<shared_ptr<IRCode>>::iterator iter; 
+	int pos=0;
+	for (iter = this->generator->IRCodeFile.begin(); 
+		 iter != this->generator->IRCodeFile.end(); ++iter)
+	{
+		pos++;
+		if ((*iter)->_opType == OperationType::LABEL || (*iter)->_opType == OperationType::FUNC)
+		{
+			labelPos.insert(std::pair<string, int>((*iter)->_op1, pos));
+		}
+	}
 }
 /*
-MOV,ADD,SUB,MUL,DIV,
-CMP,
-JMP,JMPF,JE,JMPT,
-STORE,LOAD,
-PUSH,POP,
-EQ, UNEQ,
-LT,GT,
-LE,GE,
-AND,OR,
-LABEL,FUNC,PARAM,RET,
-IConst,FConst
+MOV,ADD,SUB,MUL,DIV,*^
+CMP,*
+JMP,JMPF,JE,JMPT,*
+STORE,LOAD,*
+PUSH,POP,*
+EQ, UNEQ,*
+LT,GT,^
+LE,GE,^
+AND,OR,^
+LABEL,FUNC,PARAM,RET,CALL,*
+IConst,FConst*
 */
 void VirtualMachine::run()
 {
+	static bool isJmpOrCall=false;
+	
 #define GENE_CONSTITEM(TAG_TYPE)                                  \
     if ((*it)->Count == 3)                                        \
 	{                                                             \
@@ -50,7 +106,7 @@ void VirtualMachine::run()
 	}
 	case OperationType::PUSH:
 	{
-		StackItem sitem = { (*it)->_op1, "", Tag::INT };
+		StackItem sitem = { "", (*it)->_op1, Tag::INT };
 		vStack.push_back(sitem);
 		break;
 	}
@@ -69,13 +125,20 @@ void VirtualMachine::run()
 	case OperationType::LOAD:
 	{
 		string varValue = varStack[(*it)->_op1];
-		StackItem sitem = { (*it)->_op1, varValue, Tag::INT };
+		Node *varNode=currentTable->lookup((*it)->_op1);//确定变量类型
+		Tag t = Tag::INT;
+		if (varNode != NULL)
+		{
+			t = varNode->value.tag;
+		}
+		StackItem sitem = { (*it)->_op1, varValue, t };
 		vStack.push_back(sitem);
 		break;
 	}
 	case OperationType::ADD:
 	{
 		double result = 0;
+		Tag resultType;
 		if ((*it)->Count == 1)
 		{
 			//如果不是立即数，而是变量该如何处理.此处得见符号表之重要
@@ -83,35 +146,191 @@ void VirtualMachine::run()
 			vStack.pop_back();
 			StackItem item2 = vStack.back();
 			vStack.pop_back();
-			//此处见得带后缀的指令的好处
-			if (item1.type == Tag::FLOAT)
-			{
-				if (item2.type == Tag::INT)
-				{
-					result = atof(item1.value.c_str()) + atoi(item2.value.c_str());
-				}
-				else if (item2.type == Tag::FLOAT)
-				{
-					result = atof(item1.value.c_str()) + atof(item2.value.c_str());
-				}
-			}
-			else if (item1.type == Tag::INT)
-			{
-				if (item2.type == Tag::INT)
-				{
-					result = atoi(item1.value.c_str()) + atoi(item2.value.c_str());
-				}
-				else if (item2.type == Tag::FLOAT)
-				{
-					result = atoi(item1.value.c_str()) + atof(item2.value.c_str());
-				}
-			}
-		}
-		else if ((*it)->Count == 3)
-		{
 
+			//此处见得带后缀的指令的好处
+			if (item1.type == Tag::INT && item2.type == Tag::INT)
+			{
+				resultType = Tag::INT;
+			}
+			else
+			{
+				resultType = Tag::FLOAT;
+			}
+			result = atof(item1.value.c_str()) + atof(item2.value.c_str());
+			if (resultType == Tag::INT)
+			{
+				StackItem sitem = { item1.value+item2.value+"_result", to_string((int)result), Tag::INT };
+				vStack.push_back(sitem);
+			}
+			else
+			{
+				StackItem sitem = { item1.value + item2.value + "_result", to_string(result), Tag::FLOAT };
+				vStack.push_back(sitem);
+			}
 		}
+		else if ((*it)->Count == 3)//一般来说，此类表达式出现于for循环 add a 1
+		{
+			if (varStack.find((*it)->_op1) != varStack.end())
+			{
+				string val=varStack[(*it)->_op1];
+				varStack[(*it)->_op1] = to_string(atoi(val.c_str()) + atoi((*it)->_op2.c_str()));
+			}
+		}
+		break;
 		
 	}
+	case OperationType::JMP:
+	{
+		isJmpOrCall = true;
+		if (labelPos.find((*it)->_op1) != labelPos.end())
+		{
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+		}
+		break;
+	}
+	case OperationType::JMPT:
+	{
+		isJmpOrCall = true;
+		if (reg_flag && labelPos.find((*it)->_op1) != labelPos.end())
+		{
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+		}
+		break;
+	}
+	case OperationType::JE:
+	{
+		isJmpOrCall = true;
+		StackItem item1 = vStack.back();
+		vStack.pop_back();
+		StackItem item2 = vStack.back();
+		vStack.pop_back();
+		if (atof(item1.value.c_str()) - atof(item2.value.c_str()) == 0)//相等时，标志位为真
+		{
+			reg_flag = true;
+		}
+		if (reg_flag && labelPos.find((*it)->_op1) != labelPos.end())
+		{
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+		}
+		break;
+	}
+	case OperationType::JMPF:
+	{
+		isJmpOrCall = true;
+		if (!reg_flag && labelPos.find((*it)->_op1) != labelPos.end())
+		{
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+		}
+		break;
+	}
+	case OperationType::EQ:
+	{
+		StackItem item1 = vStack.back();
+		vStack.pop_back();
+		StackItem item2 = vStack.back();
+		vStack.pop_back();
+		if (item1.value == item2.value)
+		{
+			reg_flag = true;
+		}
+		break;
+	}
+	case OperationType::UNEQ:
+	{
+		StackItem item1 = vStack.back();
+		vStack.pop_back();
+		StackItem item2 = vStack.back();
+		vStack.pop_back();
+		if (item1.value != item2.value)
+		{
+			reg_flag = true;
+		}
+		break;
+	}
+	case OperationType::CMP:
+	{
+		StackItem item1 = vStack.back();
+		vStack.pop_back();
+		StackItem item2 = vStack.back();
+		vStack.pop_back();
+		if (atof(item1.value.c_str()) - atof(item2.value.c_str()) == 0)//相等时，标志位为真
+		{
+			reg_flag = true;
+		}
+		break;
+	}
+	case OperationType::LABEL:
+	{
+		break;//nothing to do with label instruction
+	}
+	case OperationType::FUNC:
+	{
+		break;//nothing to do with FUNC instruction
+	}
+	case OperationType::PARAM:
+	{
+		//果然需要倒序入栈，TMD运行时需要pop栈中的实参，实参此时正好是倒序
+		StackItem item = vStack.back();
+		vStack.pop_back();
+		currentTable = currentTable->findInnerTable(rtInfo.currentScope);
+		//Tag t = currentTable->lookupInScope((*it)->_op1)->value.tag;
+		rtInfo.paramNum++;//有几个param。初始化时实参已经加入到了stack上，但是ret时需要将实参也删除，此处必须确定实参个数
+		varStack.insert(std::pair<string, string>((*it)->_op1, item.value));
+		//distance 对iterator做减法
+		rtInfo.varStackItems.push_back(distance(varStack.find((*it)->_op1),varStack.begin()));
+		break;
+	}
+	case OperationType::RET:
+	{
+		isJmpOrCall = true;//ret也是跳转指令
+		if (labelPos.find(rtInfo.currentScope+"_call") != labelPos.end())
+		{
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+		}
+		rtInfo.lastScope = rtInfo.currentScope;
+		rtInfo.currentScope = rtInfo.lastScope;
+		int vStackClear= vStack.size() - rtInfo.vStackItems-rtInfo.paramNum;
+		
+		int constStackClear = constStack.size() - rtInfo.constStackItems;
+		while (vStackClear>0 ||constStackClear>0)//clear stack
+		{
+			vStack.pop_back();
+			//varStack.erase
+			constStack.pop_back();
+			vStackClear--;
+		}
+		while (rtInfo.varStackItems.size() > 0)//删除新加的局部变量
+		{
+			int item = rtInfo.varStackItems.back();
+			//map是非线性的容器，iterator不能直接加减
+			map<string,string>::iterator iter= varStack.begin();
+			advance(iter, item);//前移iterator
+			varStack.erase(iter);
+		}
+		rtInfo.vStackItems=vStack.size();//恢复栈帧
+		currentTable = currentTable->outer;//恢复符号表
+		break;
+	}
+	case OperationType::CALL:
+	{
+		isJmpOrCall = true;
+		if (labelPos.find((*it)->_op1) != labelPos.end())
+		{
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+			labelPos.insert(std::pair<string, int>((*it)->_op1 + "_call", programCounter+1));
+			rtInfo.lastScope = rtInfo.currentScope;
+			rtInfo.currentScope = (*it)->_op1;
+			rtInfo.vStackItems = vStack.size();
+		}
+		break;
+	}
+	}
+	if (!isJmpOrCall)
+	{
+		move();
+	}
+	else
+	{
+		programCounter = it - generator->IRCodeFile.begin();
 	}
 }

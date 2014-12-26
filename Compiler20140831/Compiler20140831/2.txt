@@ -5,6 +5,7 @@ var i:integer;
 	t1:integer;
 	t2:float;
 	k:integer;
+	n:integer;
 type anc=record 
    c:integer;
    zz:string;
@@ -12,6 +13,7 @@ type anc=record
    ghdg122:float;
    end;
 function testFunc(a:integer;b:integer):integer;
+var testVar:integer;
 begin
 a:=10;
 b:=1000.22;

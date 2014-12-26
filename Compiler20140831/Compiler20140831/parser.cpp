@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "Declaration.h"
 /**
 *@time 2014-08-31
 *@author wanghesai
@@ -386,6 +387,7 @@ namespace swd
 			match(FORWORD);
 			it++;
 			match(SEMI);
+			return funcStmt;
 		}
 	}
 

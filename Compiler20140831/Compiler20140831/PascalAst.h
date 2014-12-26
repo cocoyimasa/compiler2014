@@ -1,13 +1,17 @@
 #pragma once
 #include "lexer.h"
-#include "SymbolTable.h"
 namespace compiler
 {
 	class IRCodeGen;
 }
 namespace swd{
-	
 	class SemanticAnalyzerBase;
+	class Declaration;
+	class ConstantDecl;
+	class VariableDecl;
+	class TypeDecl;
+	class FunctionDecl;
+
 	class Node
 	{
 	public:

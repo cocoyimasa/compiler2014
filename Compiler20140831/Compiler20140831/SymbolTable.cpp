@@ -1,84 +1,75 @@
 #include "SymbolTable.h"
-
+#include "PascalAst.h"
 namespace swd
 {
-	void SymbolTable::add(std::string key, shared_ptr<Declaration> val)
+	SymbolTable::SymbolTable()
 	{
-		if (lookup(key) == NULL)
-		{
-			symTbl.insert(pair<string, shared_ptr<Declaration>>(key, val));
-		}
+		tableIndex = 0;
+		this->name = "";
+		outer = NULL;
 	}
-
-	shared_ptr<Declaration> SymbolTable::lookup(std::string key)
+	SymbolTable::SymbolTable(string name)
 	{
-		if (symTbl.empty())
-		{
-			return NULL;
-		}
-		if (!symTbl.empty() && symTbl.find(key) != symTbl.end())
-		{
-			return symTbl[key];
-		}
-		return NULL;
+		tableIndex = 0;
+		this->name = name;
+		outer = NULL;
 	}
-
-	shared_ptr<Declaration> SymbolTableStack::lookup(std::string val)
+	bool SymbolTable::addInnerTable(SymbolTable *innerTable)
 	{
-		if (symTbls.empty())
+		if (innerTable->name == "")
 		{
-			return NULL;
+			innerTable->name = to_string(tableIndex);
 		}
-		for (int i = currNestLevel; i >= 0; i--)
-		{
-			shared_ptr<Declaration> decl = symTbls[currNestLevel]->lookup(val);
-			if (decl!=NULL)
-				return decl;
-		}
-		return NULL;
+		tableIndex++;
+		inner.push_back(innerTable);
+		return true;
 	}
-
-	shared_ptr<Declaration> SymbolTableStack::lookup(std::string val,bool isDecl)
+	SymbolTable* SymbolTable::findInnerTable(string name)
 	{
-		if (!isDecl)return NULL;
-		if (symTbls.empty())
+		if (inner.size() > 0)
 		{
-			return NULL;
-		}
-		shared_ptr<Declaration> decl = symTbls[currNestLevel]->lookup(val);
-		return decl;
-	}
-
-	void SymbolTableStack::push(shared_ptr<SymbolTable> tableName)
-	{
-		currNestLevel++;
-		symTbls.insert(pair<int, shared_ptr<SymbolTable> >(currNestLevel, tableName));
-	}
-
-	shared_ptr<SymbolTable> SymbolTableStack::getTable(int level)
-	{
-		if (!symTbls.empty())
-		{
-			return symTbls[level];
-		}
-		return NULL;
-	}
-
-	void SymbolTableStack::pop()
-	{
-		if (symTbls.empty())
-		{
-			return;
-		}
-		for (map<int, shared_ptr<SymbolTable> >::iterator it = symTbls.begin();
-			 it != symTbls.end();
-			 ++it)
-		{
-			if (it->first == currNestLevel)
+			for (auto item : inner)
 			{
-				symTbls.erase(it);
-				currNestLevel--;
+				if (item->name == name)
+				{
+					return item;
+				}
 			}
 		}
+	}
+	bool SymbolTable::add(std::string key, Node* val)
+	{
+		if (dict.find(key)==dict.end())
+		{
+			dict.insert(std::pair<string, Node*>(key, val));
+			return true;
+		}
+		return false;
+	}
+	Node* SymbolTable::lookup(std::string key)
+	{
+		SymbolTable *env = this;
+		while (env != NULL)
+		{
+			if (env->dict.find(key)!=env->dict.end())
+			{
+				return env->dict[key];
+			}
+			if (env->outer != NULL)
+			{
+				env = env->outer;
+			}
+			else
+				break;
+		}
+		return NULL;
+	}
+	Node* SymbolTable::lookupInScope(std::string key)
+	{
+		if (dict.find(key) != dict.end())
+		{
+			return dict[key];
+		}
+		return NULL;
 	}
 }
