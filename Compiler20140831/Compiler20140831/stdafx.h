@@ -9,6 +9,8 @@
 #include <vector>
 #include <iterator>
 #include <map>
+#include <algorithm>
+#include <functional>
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <windows.h>

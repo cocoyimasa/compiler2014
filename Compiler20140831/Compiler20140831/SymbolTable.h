@@ -16,6 +16,8 @@ namespace swd
 		int tableIndex;
 		SymbolTable* outer;
 		vector<SymbolTable*> inner;
+
+		//methods-------------------------------
 		SymbolTable();
 		SymbolTable(string name);
 		std::map<std::string, swd::Node* > dict;

@@ -283,6 +283,7 @@ namespace swd
 					}
 					else
 					{
+						block->value.value = "__Main__";
 						currNode->addNode(block);
 					}
 					bool tmp=it->tag == FINISH || it->tag == END;

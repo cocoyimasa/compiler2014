@@ -80,6 +80,11 @@ namespace compiler{
 
 	void IRCodeGen::genCode(Statement* node)
 	{
+		if (node->value.value == "__Main__")
+		{
+			auto _Main_ = make_shared<IRCode>(OperationType::LABEL, "__Main__");
+			IRCodeFile.push_back(_Main_);
+		}
 		for (auto item : node->list)
 		{
 			item->genCode(this);

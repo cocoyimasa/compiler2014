@@ -21,6 +21,7 @@ VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator)
 	this->generator = generator;
 	it = generator->IRCodeFile.begin();
 	this->labelScan();
+	this->initRuntimeInfo();
 }
 VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator, 
 							   swd::SymbolTable *symTable)
@@ -32,6 +33,7 @@ VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator,
 	currentTable = symTable;
 	it = generator->IRCodeFile.begin();
 	this->labelScan();
+	this->initRuntimeInfo();
 }
 
 void VirtualMachine::move()
@@ -337,6 +339,11 @@ void VirtualMachine::scan()
 	}
 	case OperationType::FUNC:
 	{
+		if (rtInfo.currentScope == "global")
+		{
+			it = generator->IRCodeFile.begin() + labelPos["__Main__"];
+			isJmpOrCall = true;//第一次到这里的时候要跳到__Main__
+		}
 		break;//nothing to do with FUNC instruction
 	}
 	case OperationType::PARAM:
