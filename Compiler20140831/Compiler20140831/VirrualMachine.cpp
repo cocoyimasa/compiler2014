@@ -1,11 +1,15 @@
 #include "VirtualMachine.h"
 #include "parser.h"
 #include "SymbolTable.h"
+#include "PascalAst.h"
+#include "Declaration.h"
 using namespace vm;
 /*
 *@time 2014-12-24
 *@author wanghesai
 *All rights reserved
+*
+*2015-1-14,1-15 增加IO库函数支持 更新LOAD指令的支持
 */
 VirtualMachine::VirtualMachine()
 {
@@ -22,6 +26,7 @@ VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator)
 	it = generator->IRCodeFile.begin();
 	this->labelScan();
 	this->initRuntimeInfo();
+	this->symTable->initFunctions();
 }
 VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator, 
 							   swd::SymbolTable *symTable)
@@ -34,6 +39,7 @@ VirtualMachine::VirtualMachine(compiler::IRCodeGen *generator,
 	it = generator->IRCodeFile.begin();
 	this->labelScan();
 	this->initRuntimeInfo();
+	this->symTable->initFunctions();
 }
 
 void VirtualMachine::move()
@@ -71,9 +77,8 @@ void VirtualMachine::compute(char op)
 {
 	double result = 0;
 	Tag resultType;
-	if ((*it)->Count == 1)
+	if ((*it)->Count == 0)
 	{
-		//如果不是立即数，而是变量该如何处理.此处得见符号表之重要
 		StackItem item1 = vStack.back();
 		vStack.pop_back();
 		StackItem item2 = vStack.back();
@@ -119,7 +124,7 @@ void VirtualMachine::compute(char op)
 			vStack.push_back(sitem);
 		}
 	}
-	else if ((*it)->Count == 3)//一般来说，此类表达式出现于for循环 add a 1
+	else if ((*it)->Count == 2)//一般来说，此类表达式出现于for循环 add a 1
 	{
 		if (varStack.find((*it)->_op1) != varStack.end())
 		{
@@ -146,6 +151,38 @@ void VirtualMachine::compute(char op)
 		}
 	}
 }
+template<typename T>
+void VirtualMachine::write(T stringOrNum)
+{
+	cout << stringOrNum << endl;
+}
+template<typename T>
+void VirtualMachine::read(T varName)
+{
+	cin >> varName;
+}
+
+void VirtualMachine::functionExec(string funcName, string *params, int args)
+{
+	if (funcName == "read"&& args==1)
+	{
+		read(params[0]);//bug
+		//把字符串值转换为变量 how？
+		/*
+		write("please input a number:");
+		read(k);
+		write(k);
+		*/
+	}
+	else if (funcName == "write" && args == 1)
+	{
+		write(params[0]);
+	}
+	else
+	{
+		//
+	}
+}
 
 /*
 MOV,ADD,SUB,MUL,DIV,*^
@@ -161,11 +198,11 @@ LABEL,FUNC,PARAM,RET,CALL,*
 IConst,FConst*
 */
 #define GENE_CONSTITEM(TAG_TYPE)                                  \
-    if ((*it)->Count == 3)                                        \
+    if ((*it)->Count == 2)                                        \
 	{                                                             \
 	StackItem sitem = { (*it)->_op1, (*it)->_op2, TAG_TYPE };     \
 	constStack.push_back(sitem);                                  \
-	}else if ((*it)->Count == 2)                                  \
+	}else if ((*it)->Count == 1)                                  \
 	{                                                             \
 		StackItem sitem = { (*it)->_op1, "", TAG_TYPE };          \
 		constStack.push_back(sitem);                              \
@@ -180,6 +217,7 @@ IConst,FConst*
 	{                                         \
 	reg_flag = true;                          \
 	} 
+
 void VirtualMachine::scan()
 {
 	static bool isJmpOrCall=false;
@@ -216,12 +254,27 @@ void VirtualMachine::scan()
 	}
 	case OperationType::LOAD:
 	{
-		string varValue = varStack[(*it)->_op1];
-		Node *varNode=currentTable->lookup((*it)->_op1);//确定变量类型
+		string varValue="";
+		Node *varNode=currentTable->lookup((*it)->_op1);
 		Tag t = Tag::INT;
 		if (varNode != NULL)
 		{
-			t = varNode->value.tag;
+			t = varNode->value.tag;//Node为ConstantStmt,TypeStmt,VariableStmt
+			switch (t)
+			{
+			case Tag::CONSTANT:
+				t = ((ConstantStmt*)varNode)->constDeclare->value.tag;
+				varValue = ((ConstantStmt*)varNode)->constDeclare->value.value;
+				break;
+			case Tag::VAR:
+				varValue = varStack[(*it)->_op1];
+				t = ((VariableStmt*)varNode)->varDeclare->identity.tag;
+				break;
+			case Tag::TYPE:
+				t = Tag::TYPE;
+				varValue = "";
+				break;
+			}
 		}
 		StackItem sitem = { (*it)->_op1, varValue, t };
 		vStack.push_back(sitem);
@@ -394,23 +447,32 @@ void VirtualMachine::scan()
 	}
 	case OperationType::CALL:
 	{
-		isJmpOrCall = true;
 		if (labelPos.find((*it)->_op1) != labelPos.end())
 		{
+			isJmpOrCall = true;
 			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
 			labelPos.insert(std::pair<string, int>((*it)->_op1 + "_call", programCounter+1));
 			rtInfo.lastScope = rtInfo.currentScope;
 			rtInfo.currentScope = (*it)->_op1;
 			rtInfo.vStackItems = vStack.size();
 		}
+		else if (symTable->lookupFunction((*it)->_op1))//built-in functions
+		{
+			isJmpOrCall = false;
+			StackItem item = vStack.back();
+			vStack.pop_back();
+			//built-in function call
+			string params[] = { item.value };
+			functionExec((*it)->_op1, params, 1);
+		}
 		break;
 	}
 	}
-	if (!isJmpOrCall)
+	if (!isJmpOrCall)//非跳转指令指针移动
 	{
 		move();
 	}
-	else
+	else//跳转指令无需移动
 	{
 		programCounter = it - generator->IRCodeFile.begin();
 	}

@@ -14,6 +14,11 @@ namespace swd
 		this->name = name;
 		outer = NULL;
 	}
+	void SymbolTable::initFunctions()
+	{
+		builtInFunctions.push_back("read");
+		builtInFunctions.push_back("write");
+	}
 	bool SymbolTable::addInnerTable(SymbolTable *innerTable)
 	{
 		if (innerTable->name == "")
@@ -71,5 +76,16 @@ namespace swd
 			return dict[key];
 		}
 		return NULL;
+	}
+	bool SymbolTable::lookupFunction(string funcName)
+	{
+		for (auto item : builtInFunctions)
+		{
+			if (item == funcName)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }

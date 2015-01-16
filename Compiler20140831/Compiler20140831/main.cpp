@@ -3,12 +3,13 @@
 #include "CodeGen.h"
 #include "SymbolTable.h"
 #include "VirtualMachine.h"
+#include <time.h>
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	{
 		swd::Lexer lexer;
-		lexer.readSource("2.txt");
+		lexer.readSource("3.txt");
 		lexer.scan();
 		/*for (auto i : lexer.tokenStream)
 		{
@@ -29,20 +30,43 @@ int main()
 		}
 		else
 		{
-			std::cout << "Parse成功，没有错误!^_^\n";
+			std::cout << "building...no error!\n";
 		}
-		parser.root->print();
+		//parser.root->print();//print synatatic tree
 		swd::SemanticAnalyzer semanticAnalyzer;
 		parser.root->accept(&semanticAnalyzer);
 		symStack = semanticAnalyzer.symTable;//defined above the parser object--
 		compiler::IRCodeGen codeGen;
 		parser.root->genCode(&codeGen);
-		for (auto item : codeGen.IRCodeFile)
-		{
-			cout << item->toString() << endl;
-		}
+		//for (auto item : codeGen.IRCodeFile)//print IR code
+		//{
+		//	cout << item->toString() << endl;
+		//}
 		vm::VirtualMachine myVM(&codeGen, symStack);
+		//系统时间
+		time_t tim;
+		struct tm *at;
+		char now[80];
+		time(&tim);
+		at = localtime(&tim);
+		strftime(now, 79, "%Y-%m-%d %H:%M:%S", at);
+		std::cout << now << "---------" << "Compiled.-------------------------" << endl;
+		//更改控制台字体颜色
+		HANDLE hOut= GetStdHandle(STD_OUTPUT_HANDLE);
+
+		SetConsoleTextAttribute(hOut,
+			FOREGROUND_RED |      // 前景色_红色
+			FOREGROUND_INTENSITY); // 前景色_加强
+
+		///////////////////////////////
 		myVM.run();
+		///////////////////////////////
+		//白色字体
+		SetConsoleTextAttribute(hOut,
+			FOREGROUND_RED |   
+			FOREGROUND_GREEN | 
+			FOREGROUND_BLUE);  
+		std::cout << "press Enter to exit." << endl;
 	}
 	getchar();
 	return 0;

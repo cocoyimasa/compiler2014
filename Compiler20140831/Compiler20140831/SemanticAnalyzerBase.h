@@ -18,7 +18,7 @@ namespace swd
 	class	VariableStmt;
 	class	TypeStmt;
 	class	ConstantStmt;
-
+	//provide interface for compiler and interpreter
 	class SemanticAnalyzerBase
 	{
 	public:

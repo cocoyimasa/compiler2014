@@ -410,6 +410,8 @@ namespace swd
 			auto varDecl = parseVariable();
 			auto varStmt = make_shared<VariableStmt>();
 			varStmt->varDeclare = varDecl;
+			varStmt->value.value = "VariableStmt";
+			varStmt->value.tag = Tag::VAR;
 			rootVal->varRoot.push_back(varStmt);
 		}
 		currNode->addNode(rootVal);
@@ -442,7 +444,8 @@ namespace swd
 
 			auto typeStmt = make_shared<TypeStmt>();
 			typeStmt->typeDeclare = typeDecl;
-
+			typeStmt->value.value = "TypeStmt";
+			typeStmt->value.tag = Tag::TYPE;
 			typeDecl->name = it->value;
 			typeDecl->type = DeclaredType::Record;
 			
@@ -457,6 +460,8 @@ namespace swd
 						auto record1=parseVariable();
 						auto varStmt = make_shared<VariableStmt>();
 						varStmt->varDeclare = record1;
+						varStmt->value.value = "VariableStmt";
+						varStmt->value.tag = Tag::VAR;
 						typeDecl->vars.push_back(record1);
 						typeStmt->varStmts.push_back(varStmt);
 					}
@@ -483,6 +488,8 @@ namespace swd
 			auto constDecl= make_shared<ConstantDecl>();
 			auto constStmt = make_shared<ConstantStmt>();
 			constStmt->constDeclare = constDecl;
+			constStmt->value.value = "ConstantStmt";
+			constStmt->value.tag = Tag::CONSTANT;
 			constDecl->name = it->value;
 			constDecl->type = DeclaredType::Constant;
 			it++;

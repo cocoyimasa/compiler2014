@@ -55,5 +55,11 @@ namespace vm
 		void move();
 		void run();
 		void compute(char op);
+		void functionExec(string funcName,string *params,int args);
+		//built-in ...something wrong...yabaiyo
+		template<typename T>
+		void write(T stringOrNum);
+		template<typename T>
+		void read(T varName);
 	};
 }

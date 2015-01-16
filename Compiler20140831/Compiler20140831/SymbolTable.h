@@ -16,10 +16,12 @@ namespace swd
 		int tableIndex;
 		SymbolTable* outer;
 		vector<SymbolTable*> inner;
-
+		vector<string> builtInFunctions;
 		//methods-------------------------------
 		SymbolTable();
 		SymbolTable(string name);
+		void initFunctions();
+		bool lookupFunction(string funcName);
 		std::map<std::string, swd::Node* > dict;
 		bool add(std::string key, Node* val);
 		bool addInnerTable(SymbolTable *innerTable);
