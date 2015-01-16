@@ -1,4 +1,5 @@
 compiler2014
+
 ============
 
 my compiler for pascal (C++ Edition)
@@ -14,6 +15,7 @@ I have used many C++11 features in my code.So VC++2012 or 2013 is needed.(I use 
 
 
 支持以下Pascal语言特性：
+
 1.基本数学运算和赋值
 
 2.float int string类型变量，常量，record声明
