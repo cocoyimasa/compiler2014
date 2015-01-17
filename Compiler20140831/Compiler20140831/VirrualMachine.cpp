@@ -10,6 +10,7 @@ using namespace vm;
 *All rights reserved
 *
 *2015-1-14,1-15 增加IO库函数支持 更新LOAD指令的支持
+*1-18 更新read库函数的支持
 */
 VirtualMachine::VirtualMachine()
 {
@@ -157,26 +158,25 @@ void VirtualMachine::write(T stringOrNum)
 	cout << stringOrNum << endl;
 }
 template<typename T>
-void VirtualMachine::read(T varName)
+void VirtualMachine::read(T* varName)
 {
-	cin >> varName;
+	cin >> *varName;
+	cin.get();//consume enter key
 }
 
-void VirtualMachine::functionExec(string funcName, string *params, int args)
+void VirtualMachine::functionExec(string funcName, StackItem *params, int args)
 {
 	if (funcName == "read"&& args==1)
 	{
-		read(params[0]);//bug
-		//把字符串值转换为变量 how？
-		/*
-		write("please input a number:");
-		read(k);
-		write(k);
-		*/
+		string s;
+		read(&s);
+		params[0].value = s;
+		//更新varStack的k,读之前已经加载到了变量栈
+		varStack[params[0].name]=params[0].value;
 	}
 	else if (funcName == "write" && args == 1)
 	{
-		write(params[0]);
+		write(params[0].value);
 	}
 	else
 	{
@@ -462,8 +462,7 @@ void VirtualMachine::scan()
 			StackItem item = vStack.back();
 			vStack.pop_back();
 			//built-in function call
-			string params[] = { item.value };
-			functionExec((*it)->_op1, params, 1);
+			functionExec((*it)->_op1, &item, 1);
 		}
 		break;
 	}

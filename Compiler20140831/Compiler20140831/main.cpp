@@ -38,10 +38,10 @@ int main()
 		symStack = semanticAnalyzer.symTable;//defined above the parser object--
 		compiler::IRCodeGen codeGen;
 		parser.root->genCode(&codeGen);
-		//for (auto item : codeGen.IRCodeFile)//print IR code
-		//{
-		//	cout << item->toString() << endl;
-		//}
+		for (auto item : codeGen.IRCodeFile)//print IR code
+		{
+			cout << item->toString() << endl;
+		}
 		vm::VirtualMachine myVM(&codeGen, symStack);
 		//系统时间
 		time_t tim;

@@ -7,7 +7,9 @@ var i:integer;
 	k:integer;
 	n:integer;
 begin
-
+write("input a number:");
+read(k);
+write(k);
 i:=10+20+10*10;
 t2:=10*20+20;
 write(i);
