@@ -213,10 +213,12 @@ IConst,FConst*
 	vStack.pop_back();                        \
 	StackItem item2 = vStack.back();          \
 	vStack.pop_back();                        \
-	if (item1.value _CMP_OP_ item2.value)     \
+	if (item2.value _CMP_OP_ item1.value)     \
 	{                                         \
 	reg_flag = true;                          \
-	} 
+	}                                         \
+	else                                      \
+	{reg_flag=false;} 
 
 void VirtualMachine::scan()
 {
@@ -249,7 +251,12 @@ void VirtualMachine::scan()
 	{
 		StackItem aitem = vStack.back();
 		vStack.pop_back();
-		varStack.insert(std::pair<string, string>((*it)->_op1, aitem.value));
+		if (varStack.find((*it)->_op1) != varStack.end() && varStack[(*it)->_op1] != aitem.value)
+		{
+			varStack[(*it)->_op1] = aitem.value;
+		}
+		else
+			varStack.insert(std::pair<string, string>((*it)->_op1, aitem.value));
 		break;
 	}
 	case OperationType::LOAD:
@@ -302,18 +309,18 @@ void VirtualMachine::scan()
 	}
 	case OperationType::JMP:
 	{
-		isJmpOrCall = true;
 		if (labelPos.find((*it)->_op1) != labelPos.end())
 		{
+			isJmpOrCall = true;
 			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
 		}
 		break;
 	}
 	case OperationType::JMPT:
 	{
-		isJmpOrCall = true;
 		if (reg_flag && labelPos.find((*it)->_op1) != labelPos.end())
 		{
+			isJmpOrCall = true;
 			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
 		}
 		break;
@@ -337,9 +344,9 @@ void VirtualMachine::scan()
 	}
 	case OperationType::JMPF:
 	{
-		isJmpOrCall = true;
 		if (!reg_flag && labelPos.find((*it)->_op1) != labelPos.end())
 		{
+			isJmpOrCall = true;
 			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
 		}
 		break;
@@ -401,10 +408,15 @@ void VirtualMachine::scan()
 	}
 	case OperationType::PARAM:
 	{
+		static bool isTableFound=false;
 		//果然需要倒序入栈，TMD运行时需要pop栈中的实参，实参此时正好是倒序
 		StackItem item = vStack.back();
 		vStack.pop_back();
-		currentTable = currentTable->findInnerTable(rtInfo.currentScope);
+		if (!isTableFound)
+		{
+			currentTable = currentTable->findInnerTable(rtInfo.currentScope);
+			isTableFound = true;
+		}
 		//Tag t = currentTable->lookupInScope((*it)->_op1)->value.tag;
 		rtInfo.paramNum++;//有几个param。初始化时实参已经加入到了stack上，但是ret时需要将实参也删除，此处必须确定实参个数
 		varStack.insert(std::pair<string, string>((*it)->_op1, item.value));
@@ -415,24 +427,27 @@ void VirtualMachine::scan()
 	case OperationType::RET:
 	{
 		isJmpOrCall = true;//ret也是跳转指令
-		if (labelPos.find(rtInfo.currentScope+"_call") != labelPos.end())
+		if (labelPos.find(rtInfo.currentScope + "_call") != labelPos.end())
 		{
-			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
+			it = generator->IRCodeFile.begin() + labelPos[rtInfo.currentScope + "_call"];
 		}
+		string tmp = rtInfo.lastScope;
 		rtInfo.lastScope = rtInfo.currentScope;
-		rtInfo.currentScope = rtInfo.lastScope;
+		rtInfo.currentScope = tmp;
 		int vStackClear= vStack.size() - rtInfo.vStackItems-rtInfo.paramNum;
 		
 		int constStackClear = constStack.size() - rtInfo.constStackItems;
-		while (vStackClear>0 ||constStackClear>0)//clear stack
+		while (vStackClear>0)//clear stack
 		{
 			vStack.pop_back();
-			//varStack.erase
-			constStack.pop_back();
 			vStackClear--;
+		}
+		while (constStackClear > 0)
+		{
+			constStack.pop_back();
 			constStackClear--;
 		}
-		while (rtInfo.varStackItems.size() > 0)//删除新加的局部变量
+		while (rtInfo.varStackItems.size()>0)//删除新加的局部变量
 		{
 			int item = rtInfo.varStackItems.back();
 			//map是非线性的容器，iterator不能直接加减
@@ -441,20 +456,22 @@ void VirtualMachine::scan()
 			varStack.erase(iter);
 			rtInfo.varStackItems.pop_back();
 		}
-		rtInfo.vStackItems=vStack.size();//恢复栈帧
+		rtInfo.constStackItems = constStack.size();
 		currentTable = currentTable->outer;//恢复符号表
+		
 		break;
 	}
 	case OperationType::CALL:
 	{
 		if (labelPos.find((*it)->_op1) != labelPos.end())
 		{
-			isJmpOrCall = true;
-			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
-			labelPos.insert(std::pair<string, int>((*it)->_op1 + "_call", programCounter+1));
 			rtInfo.lastScope = rtInfo.currentScope;
 			rtInfo.currentScope = (*it)->_op1;
 			rtInfo.vStackItems = vStack.size();
+			rtInfo.constStackItems = constStack.size();
+			isJmpOrCall = true;
+			labelPos.insert(std::pair<string, int>((*it)->_op1 + "_call", programCounter + 1));
+			it = generator->IRCodeFile.begin() + labelPos[(*it)->_op1];
 		}
 		else if (symTable->lookupFunction((*it)->_op1))//built-in functions
 		{
@@ -473,6 +490,7 @@ void VirtualMachine::scan()
 	}
 	else//跳转指令无需移动
 	{
+		isJmpOrCall = false;
 		programCounter = it - generator->IRCodeFile.begin();
 	}
 }

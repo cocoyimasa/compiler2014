@@ -4,12 +4,13 @@
 #include "SymbolTable.h"
 #include "VirtualMachine.h"
 #include <time.h>
+#include <fstream>
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	{
 		swd::Lexer lexer;
-		lexer.readSource("3.txt");
+		lexer.readSource("1.pas");
 		lexer.scan();
 		/*for (auto i : lexer.tokenStream)
 		{
@@ -38,10 +39,16 @@ int main()
 		symStack = semanticAnalyzer.symTable;//defined above the parser object--
 		compiler::IRCodeGen codeGen;
 		parser.root->genCode(&codeGen);
-		for (auto item : codeGen.IRCodeFile)//print IR code
+
+		//output IR code in a file
+		ofstream f("out.pasc");
+		for (auto item : codeGen.IRCodeFile)
 		{
-			cout << item->toString() << endl;
+			//cout << item->toString() << endl;
+
+			f << item->toString() << endl;
 		}
+
 		vm::VirtualMachine myVM(&codeGen, symStack);
 		//系统时间
 		time_t tim;

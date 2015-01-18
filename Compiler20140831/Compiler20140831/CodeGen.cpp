@@ -409,6 +409,7 @@ namespace compiler{
 		//body->genCode
 		node->body->genCode(this);
 		auto funcReturn = make_shared<IRCode>(OperationType::RET);
+		IRCodeFile.push_back(funcReturn);
 	}
 	void IRCodeGen::genCode(FunctionDecl* node)
 	{

@@ -1,0 +1,79 @@
+label start
+fconst PI 3.14159
+fconst E 2.1111
+iconst i
+iconst t1
+fconst t2
+iconst k
+iconst n
+iconst anc_c
+fconst anc_gfd
+fconst anc_ghdg122
+func testFunc
+param b
+param a
+push 10
+store a
+push 1000.22
+store b
+push 10
+store testFunc
+ret
+label __Main__
+push 10
+store i
+load i
+push 10
+eq
+jmpf ifend1
+push 11
+store i
+push 3888
+store t1
+push 34.33
+store t2
+push 200
+push 300
+call testFunc
+label ifend1
+load i
+push 10
+gt
+jmpf ifend3
+push 11
+store i
+push 3888
+store t1
+push 34.33
+store t2
+load t1
+call write
+load t2
+call write
+label ifend3
+label whileNext4
+load i
+push 10
+eq
+jmpf whileEnd5
+push 377
+store t1
+push 37337.376363
+store t2
+jmp whileNext4
+label whileEnd5
+push 0
+store k
+label ForNext6
+push 10
+load k
+cmp
+jmpt ForEnd7
+load k
+store i
+load i
+call write
+label _L8
+add k 1
+jmp ForNext6
+label ForEnd7
