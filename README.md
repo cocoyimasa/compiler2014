@@ -1,7 +1,5 @@
 #compiler2014
-
 ============
-
 ### my compiler for *pascal* (C++ Edition)
 
 I have used many C++11 features in my code.
