@@ -2,9 +2,9 @@
 --------------
 ### my compiler for *pascal* (C++ Edition)
 
-<b><font color='cyan'>I have used many C++11 features in my code.
+<b><font color='cyan'>I have used many C++11 features in my code.</font><b/>
 
-So VC++2012 or 2013 is needed.(I use *VS2013 community edition*)</font><b/>
+So VC++2012 or 2013 is needed.(I use *VS2013 community edition*)
 
 ###Timeline
 
