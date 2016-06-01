@@ -6,8 +6,6 @@ Compiler2014
 ![build](https://img.shields.io/wercker/ci/wercker/docs.svg)
 ![license](https://img.shields.io/aur/license/yaourt.svg)
 
-========================
-
 ### my compiler for *pascal* (C++ Edition)
 
 <b>I have used many C++11 features in my code.<b/>
