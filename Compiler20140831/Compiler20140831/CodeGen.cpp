@@ -7,7 +7,75 @@
 */
 #define RESERVE_OP(op,val)  opStringDict.insert(std::pair<OperationType, string>(op, val));
 namespace compiler{
-
+	///////data///////
+	std::string values[] = {
+		"mov", "add", "sub", "mul", "div",
+		"cmp", "jmp", "jmpf", "je", "jmpt",
+		"store", "load", "push", "pop",
+		"eq","uneq","lt", "gt", "le", "ge", "and", "or",
+		"label", "func", "param", "ret", "call",
+		"iconst", "fconst"
+	};
+	OperationType ops[] = {
+		MOV, ADD, SUB, MUL, DIV,
+		CMP,JMP, JMPF, JE, JMPT,
+		STORE, LOAD,PUSH, POP,
+		EQ,UNEQ,LT, GT,	LE, GE,	AND, OR,
+		LABEL, FUNC,PARAM,RET,CALL,
+		IConst,FConst
+	};
+	Tag tags[] = {
+		Tag::EQ, 
+		Tag::UNEQ, 
+		Tag::LT, 
+		Tag::GT,
+		Tag::LE, 
+		Tag::GE, 
+		Tag::AND, 
+		Tag::OR,
+		Tag::ADD, 
+		Tag::SUB, 
+		Tag::MUL, 
+		Tag::DIV,
+		Tag::EQ, 
+		Tag::UNEQ, 
+		Tag::LT, 
+		Tag::GT,
+		Tag::LE, 
+		Tag::GE, 
+		Tag::AND, 
+		Tag::OR,
+	};
+	Tag logicTags[] = {
+		Tag::EQ   ,
+		Tag::UNEQ ,
+		Tag::LT	  ,
+		Tag::GT	  ,
+		Tag::LE	  ,
+		Tag::GE	  ,
+		Tag::AND  ,
+		Tag::OR	  ,
+		Tag::ADD  ,
+		Tag::SUB  ,
+		Tag::MUL  ,
+		Tag::DIV
+	};
+	OperationType logicOps[] = {
+		OperationType::EQ    ,
+		OperationType::UNEQ	 ,
+		OperationType::LE	 ,
+		OperationType::GT	 ,
+		OperationType::LE	 ,
+		OperationType::GE	 ,
+		OperationType::AND	 ,
+		OperationType::OR	 ,
+		OperationType::ADD	 ,
+		OperationType::SUB	 ,
+		OperationType::MUL	 ,
+		OperationType::DIV	 ,
+		OperationType::ADD
+	};
+	///////data///////
 	void IRCode::checkCount()
 	{
 		if (_op1 == ""&&_op2 == "")
@@ -38,26 +106,11 @@ namespace compiler{
 		}
 		return "";
 	}
-
+	
 	IRCodeGen::IRCodeGen()
 	{
 		id = 0;
-		std::string values[] = {
-			"mov", "add", "sub", "mul", "div",
-			"cmp", "jmp", "jmpf", "je", "jmpt",
-			"store", "load", "push", "pop",
-			"eq","uneq","lt", "gt", "le", "ge", "and", "or",
-			"label", "func", "param", "ret", "call",
-			"iconst", "fconst"
-		};
-		OperationType ops[] = {
-			MOV, ADD, SUB, MUL, DIV,
-			CMP,JMP, JMPF, JE, JMPT,
-			STORE, LOAD,PUSH, POP,
-			EQ,UNEQ,LT, GT,	LE, GE,	AND, OR,
-			LABEL, FUNC,PARAM,RET,CALL,
-			IConst,FConst
-		};
+		
 		for (int i = 0; i < sizeof(ops) / sizeof(ops[0]); i++)//计算数组长度
 		{
 			RESERVE_OP(ops[i], values[i])
@@ -93,47 +146,26 @@ namespace compiler{
 
 	OperationType convertTag(Tag t)
 	{
-		switch (t)
-		{
-		case Tag::EQ:
-		return OperationType::EQ;
-		case Tag::UNEQ:
-		return OperationType::UNEQ;
-		case Tag::LT:
-		return OperationType::LE;
-		case Tag::GT:
-		return OperationType::GT;
-		case Tag::LE:
-		return OperationType::LE;
-		case Tag::GE:
-		return OperationType::GE;
-		case Tag::AND:
-		return OperationType::AND;
-		case Tag::OR:
-		return OperationType::OR;
-		case Tag::ADD:
-		return OperationType::ADD;
-		case Tag::SUB:
-		return OperationType::SUB;
-		case Tag::MUL:
-		return OperationType::MUL;
-		case Tag::DIV:
-		return OperationType::DIV;
-		default:
-		return OperationType::ADD;
+		auto findTag = [=](Tag t) {
+			for (int i = 0;i < 12;i++) {
+				if (t == logicTags[i]) {
+					return i;
+				}
+			}
+			return -1;
+		};
+
+		int id = findTag(t);
+		if (id != -1) {
+			return logicOps[id];
+		}
+		else {
+			return OperationType::ADD;
 		}
 	}
 
 	bool isOp(Tag t)
-	{
-		Tag tags[] = {
-			Tag::EQ, Tag::UNEQ, Tag::LT, Tag::GT,
-			Tag::LE, Tag::GE, Tag::AND, Tag::OR,
-			Tag::ADD, Tag::SUB, Tag::MUL, Tag::DIV,
-			Tag::EQ, Tag::UNEQ, Tag::LT, Tag::GT,
-			Tag::LE, Tag::GE, Tag::AND, Tag::OR,
-		};
-		
+	{	
 		for (auto i : tags)
 		{
 			if (t == i)
@@ -142,13 +174,10 @@ namespace compiler{
 			}
 		}
 		return false;
-
 	}
 
 	void IRCodeGen::genCode(Expression* node)
 	{
-		
-		
 		//表达式树根节点为运算符或关系符 且子节点非空
 		if (isOp(node->value.tag) && node->list.size() != 0)
 		{
