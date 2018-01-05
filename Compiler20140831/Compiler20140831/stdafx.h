@@ -12,15 +12,21 @@
 #include <algorithm>
 #include <functional>
 #include <stdlib.h>
-#include <crtdbg.h>
-#include <windows.h>
-#ifdef _DEBUG
-#define DEBUG_CLIENTBLOCK   new( _CLIENT_BLOCK, __FILE__, __LINE__)
-#else
-#define DEBUG_CLIENTBLOCK
-#endif
 
-#ifdef _DEBUG
-#define new DEBUG_CLIENTBLOCK
+#define __WINDOWS
+
+#ifdef __WINDOWS
+	#include <crtdbg.h>
+	#include <windows.h>
+
+	#ifdef _DEBUG
+		#define DEBUG_CLIENTBLOCK   new( _CLIENT_BLOCK, __FILE__, __LINE__)
+	#else
+		#define DEBUG_CLIENTBLOCK
+	#endif
+
+	#ifdef _DEBUG
+		#define new DEBUG_CLIENTBLOCK
+	#endif
 #endif
 using namespace std;
