@@ -14,12 +14,14 @@ param b
 param a
 push 10
 store a
-push 1000.22
+pushf 1000.22
 store b
 push 10
 store testFunc
 ret
 label __Main__
+pushs Hello World
+call write
 push 10
 store i
 load i
@@ -30,7 +32,7 @@ push 11
 store i
 push 3888
 store t1
-push 34.33
+pushf 34.33
 store t2
 push 200
 push 300
@@ -42,11 +44,15 @@ gt
 jmpf ifend3
 push 11
 store i
-push 3888
+pushf 3888.2
 store t1
-push 34.33
+pushf 34.33
 store t2
 load t1
+pushf 10.1
+add
+store n
+load n
 call write
 load t2
 call write
@@ -58,7 +64,7 @@ eq
 jmpf whileEnd5
 push 377
 store t1
-push 37337.376363
+pushf 37337.376363
 store t2
 jmp whileNext4
 label whileEnd5

@@ -19,7 +19,11 @@ namespace compiler{
 		LE,GE,
 		AND,OR,
 		LABEL,FUNC,PARAM,RET,CALL,
-		IConst,FConst
+		IConst,FConst,
+		PUSHF,
+		POPF,
+		PUSHS,
+		POPS
 	};
 	class CodeGenInfo
 	{

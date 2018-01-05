@@ -8,7 +8,31 @@
 #define RESERVE_KEYWORD(str,val)  keywords.insert(std::pair<std::string, Tag>(str, val));
 namespace swd
 {
-
+	///utils///
+	bool isWhitespace(char ch)
+	{
+		if (ch == '\n' || ch == '\r' || ch == '\t' || ch == ' ')
+			return true;
+		else
+			return false;
+	}
+	bool isLetter(char ch)
+	{
+		return (ch >= 'a'&&ch <= 'z') || (ch >= 'A'&&ch <= 'Z') || ch == '_';
+	}
+	bool isNum(char ch)
+	{
+		return ch >= '0'&&ch <= '9';
+	}
+	bool isLetterOrNum(char ch)
+	{
+		return isLetter(ch) || isNum(ch);
+	}
+	bool isEnterkey(char ch)
+	{
+		return ch == '\r';
+	}
+	///utils///
 	Token::Token(Tag t, std::string &v, int l)
 	{
 		tag = t;
@@ -28,6 +52,7 @@ namespace swd
 		line = t.line;
 		return true;
 	}
+
 	Lexer::Lexer()
 	{
 		lineNum = 1;

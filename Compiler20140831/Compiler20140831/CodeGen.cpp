@@ -10,19 +10,29 @@ namespace compiler{
 	///////data///////
 	std::string values[] = {
 		"mov", "add", "sub", "mul", "div",
-		"cmp", "jmp", "jmpf", "je", "jmpt",
-		"store", "load", "push", "pop",
+		"cmp", 
+		"jmp", "jmpf", "je", "jmpt",
+		"store", "load", 
+		"push", "pop",
 		"eq","uneq","lt", "gt", "le", "ge", "and", "or",
-		"label", "func", "param", "ret", "call",
-		"iconst", "fconst"
+		"label", 
+		"func", "param", "ret", "call",
+		"iconst", "fconst",
+		"pushf", "popf",
+		"pushs", "pops",
 	};
 	OperationType ops[] = {
 		MOV, ADD, SUB, MUL, DIV,
-		CMP,JMP, JMPF, JE, JMPT,
-		STORE, LOAD,PUSH, POP,
+		CMP,
+		JMP, JMPF, JE, JMPT,
+		STORE, LOAD,
+		PUSH, POP,
 		EQ,UNEQ,LT, GT,	LE, GE,	AND, OR,
-		LABEL, FUNC,PARAM,RET,CALL,
-		IConst,FConst
+		LABEL, 
+		FUNC,PARAM,RET,CALL,
+		IConst,FConst,
+		PUSHF,POPF,
+		PUSHS, POPS
 	};
 	Tag tags[] = {
 		Tag::EQ, 
@@ -192,8 +202,19 @@ namespace compiler{
 		{
 			if (node->value.tag != Tag::IDENT)
 			{
+				auto type = node->value.tag;
 				auto child = node->value.value;
-				auto pushVar = make_shared<IRCode>(OperationType::PUSH, child);
+				shared_ptr<IRCode> pushVar;
+				if (type == Tag::FLOAT){
+					pushVar = make_shared<IRCode>(OperationType::PUSHF, child);
+				}
+				else if (type == Tag::STRING){
+					pushVar = make_shared<IRCode>(OperationType::PUSHS, child);
+				}
+				else {
+					pushVar = make_shared<IRCode>(OperationType::PUSH, child);
+				}
+				
 				IRCodeFile.push_back(pushVar);
 			}
 			else
@@ -210,7 +231,8 @@ namespace compiler{
 	{
 		//STORE A
 		genCode(node->right.get());
-		auto assStmt = make_shared<IRCode>(OperationType::STORE, node->left->value.value);
+		auto assStmt = make_shared<IRCode>(
+			OperationType::STORE, node->left->value.value);
 		IRCodeFile.push_back(assStmt);
 	}
 	//abandoned
@@ -247,19 +269,31 @@ namespace compiler{
 	{
 		for (auto item : node->constants)
 		{
-			if (item.tag == Tag::IDENT)
+			auto type = item.tag;
+			shared_ptr<IRCode> funcArgs;
+			
+			if (type == Tag::IDENT)
 			{
 				//应该是查找符号表，此处暂时用LOAD A代替
-				auto identifierVal = make_shared<IRCode>(OperationType::LOAD, item.value);
+				auto identifierVal = make_shared<IRCode>(
+					OperationType::LOAD, item.value);
 				IRCodeFile.push_back(identifierVal);
 			}
-			else
-			{
-				auto funcArgs = make_shared<IRCode>(OperationType::PUSH, item.value);
+			else if(type == Tag::FLOAT){
+				funcArgs = make_shared<IRCode>(OperationType::PUSHF, item.value);
+				IRCodeFile.push_back(funcArgs);
+			}
+			else if (type == Tag::STRING){
+				funcArgs = make_shared<IRCode>(OperationType::PUSHS, item.value);
+				IRCodeFile.push_back(funcArgs);
+			}
+			else{
+				funcArgs = make_shared<IRCode>(OperationType::PUSH, item.value);
 				IRCodeFile.push_back(funcArgs);
 			}
 		}
-		auto funcCallStmt = make_shared<IRCode>(OperationType::CALL,node->funcName);
+		auto funcCallStmt = make_shared<IRCode>(
+			OperationType::CALL,node->funcName);
 		IRCodeFile.push_back(funcCallStmt);
 	}
 
@@ -269,7 +303,8 @@ namespace compiler{
 		genCode(node->condition.get());
 		//JNT _L0   ----->JMP Not true
 		CodeGenInfo codeGenInfo = {"ifstart"+to_string(id++),"ifend"+to_string(id++)};
-		shared_ptr<IRCode> test1 = make_shared<IRCode>(OperationType::JMPF, codeGenInfo.labelEnd);
+		shared_ptr<IRCode> test1 = make_shared<IRCode>(
+			OperationType::JMPF, codeGenInfo.labelEnd);
 		IRCodeFile.push_back(test1);
 		//语句
 		node->thenBody->genCode(this);//seems to be error
@@ -277,15 +312,18 @@ namespace compiler{
 		if (node->haveElse)
 		{
 			//JMP _L1
-			shared_ptr<IRCode> endIf = make_shared<IRCode>(OperationType::JMP, codeGenInfo.labelNext);
+			shared_ptr<IRCode> endIf = make_shared<IRCode>(
+				OperationType::JMP, codeGenInfo.labelNext);
 			IRCodeFile.push_back(endIf);
 			//LABEL _L0
-			shared_ptr<IRCode> label1 = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelNext);
+			shared_ptr<IRCode> label1 = make_shared<IRCode>(
+				OperationType::LABEL, codeGenInfo.labelNext);
 			IRCodeFile.push_back(label1);
 			//语句
 			(static_pointer_cast<ElseStmt>(node->elseBody))->body->genCode(this);
 			//LABEL _L1
-			shared_ptr<IRCode> label2 = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelEnd);
+			shared_ptr<IRCode> label2 = make_shared<IRCode>(
+				OperationType::LABEL, codeGenInfo.labelEnd);
 			IRCodeFile.push_back(label2);
 		}
 		else
@@ -303,40 +341,53 @@ namespace compiler{
 	void IRCodeGen::genCode(WhileStmt* node)
 	{
 		//Label _L1
-		CodeGenInfo codeGenInfo = { "whileNext" + to_string(id++), "whileEnd" + to_string(id++) };
+		CodeGenInfo codeGenInfo = { 
+			"whileNext" + to_string(id++), 
+			"whileEnd" + to_string(id++) 
+		};
 
-		shared_ptr<IRCode> whileLabel = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelNext);
+		shared_ptr<IRCode> whileLabel = make_shared<IRCode>(
+			OperationType::LABEL, codeGenInfo.labelNext);
 		IRCodeFile.push_back(whileLabel);
 		//表达式翻译
 		genCode(node->condition.get());
 		//JNT _L0
-		shared_ptr<IRCode> testCond = make_shared<IRCode>(OperationType::JMPF, codeGenInfo.labelEnd);
+		shared_ptr<IRCode> testCond = make_shared<IRCode>(
+			OperationType::JMPF, codeGenInfo.labelEnd);
 		IRCodeFile.push_back(testCond);
 		//语句
 		node->body->genCode(this);
 		//JMP _L1
-		shared_ptr<IRCode> nextLoop = make_shared<IRCode>(OperationType::JMP, codeGenInfo.labelNext);
+		shared_ptr<IRCode> nextLoop = make_shared<IRCode>(
+			OperationType::JMP, codeGenInfo.labelNext);
 		IRCodeFile.push_back(nextLoop);
 		//LABEL _L0
-		shared_ptr<IRCode> endLoop = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelEnd);
+		shared_ptr<IRCode> endLoop = make_shared<IRCode>(
+			OperationType::LABEL, codeGenInfo.labelEnd);
 		IRCodeFile.push_back(endLoop);
 	}
 
 	void IRCodeGen::genCode(RepeatStmt* node)
 	{
 		//Label _L0
-		CodeGenInfo codeGenInfo = { "RepeatNext" + to_string(id++), "RepeatEnd" + to_string(id++) };
-		shared_ptr<IRCode> repeatLabel = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelNext);
+		CodeGenInfo codeGenInfo = { 
+			"RepeatNext" + to_string(id++), 
+			"RepeatEnd" + to_string(id++) 
+		};
+		shared_ptr<IRCode> repeatLabel = make_shared<IRCode>(
+			OperationType::LABEL, codeGenInfo.labelNext);
 		IRCodeFile.push_back(repeatLabel);
 		//语句
 		node->body->genCode(this);
 		//表达式翻译
 		genCode(node->untilCond.get());
 		//JNT _L0
-		shared_ptr<IRCode> testCond = make_shared<IRCode>(OperationType::JMPF, codeGenInfo.labelNext);
+		shared_ptr<IRCode> testCond = make_shared<IRCode>(
+			OperationType::JMPF, codeGenInfo.labelNext);
 		IRCodeFile.push_back(testCond);
 		//LABEL _L1
-		shared_ptr<IRCode> endLoop1 = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelEnd);
+		shared_ptr<IRCode> endLoop1 = make_shared<IRCode>(
+			OperationType::LABEL, codeGenInfo.labelEnd);
 		IRCodeFile.push_back(endLoop1);
 
 	}
@@ -347,13 +398,19 @@ namespace compiler{
 		//表达式1翻译
 		genCode((static_pointer_cast<AssignStmt>(node->startStmt))->right.get());
 		//STORE 循环变量 ([stack])
-		string assignStmt_loopVar = (static_pointer_cast<AssignStmt>(node->startStmt))->left->value.value;
-		shared_ptr<IRCode> assignStmt = make_shared<IRCode>(OperationType::STORE, assignStmt_loopVar);
+		string assignStmt_loopVar = 
+			(static_pointer_cast<AssignStmt>(node->startStmt))->left->value.value;
+		shared_ptr<IRCode> assignStmt = make_shared<IRCode>(
+			OperationType::STORE, assignStmt_loopVar);
 		IRCodeFile.push_back(assignStmt);
 
-		CodeGenInfo codeGenInfo = { "ForNext" + to_string(id++), "ForEnd" + to_string(id++) };
+		CodeGenInfo codeGenInfo = { 
+			"ForNext" + to_string(id++), 
+			"ForEnd" + to_string(id++) 
+		};
 		//LABEL _L1
-		auto label1 = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelNext);
+		auto label1 = make_shared<IRCode>(
+			OperationType::LABEL, codeGenInfo.labelNext);
 		IRCodeFile.push_back(label1);
 		//表达式2翻译
 		genCode(static_pointer_cast<Expression>((node->endValue)).get());
@@ -369,25 +426,29 @@ namespace compiler{
 		//语句
 		node->body->genCode(this);
 		//LABEL _L2
-		auto label2 = make_shared<IRCode>(OperationType::LABEL,
-										  "_L" + to_string(id++));
+		auto label2 = make_shared<IRCode>(
+			OperationType::LABEL,"_L" + to_string(id++));
 		IRCodeFile.push_back(label2);
 		if (node->direction == Tag::TO){
 			//ADD 循环变量 1
-			auto addStmt = make_shared<IRCode>(OperationType::ADD, assignStmt_loopVar, "1");
+			auto addStmt = make_shared<IRCode>(
+				OperationType::ADD, assignStmt_loopVar, "1");
 			IRCodeFile.push_back(addStmt);
 		}
 		else
 		{
 			//SUB 循环变量 1
-			auto addStmt = make_shared<IRCode>(OperationType::SUB, assignStmt_loopVar, "1");
+			auto addStmt = make_shared<IRCode>(
+				OperationType::SUB, assignStmt_loopVar, "1");
 			IRCodeFile.push_back(addStmt);
 		}
 		//JMP _L1
-		auto jmpStmt = make_shared<IRCode>(OperationType::JMP, codeGenInfo.labelNext);
+		auto jmpStmt = make_shared<IRCode>(
+			OperationType::JMP, codeGenInfo.labelNext);
 		IRCodeFile.push_back(jmpStmt);
 		//LABEL _L0
-		auto label0 = make_shared<IRCode>(OperationType::LABEL, codeGenInfo.labelEnd);
+		auto label0 = make_shared<IRCode>(
+			OperationType::LABEL, codeGenInfo.labelEnd);
 		IRCodeFile.push_back(label0);
 	}
 
@@ -411,23 +472,27 @@ namespace compiler{
 			tests.push_back(je);
 		}
 		//JMP _L0
-		auto jmpStmt = make_shared<IRCode>(OperationType::JMP, "_L"+to_string(id++));
+		auto jmpStmt = make_shared<IRCode>(
+			OperationType::JMP, "_L"+to_string(id++));
 		IRCodeFile.push_back(jmpStmt);
 		//LOOP------------------------
 		int j = 0;
 		for (auto item : node->body)
 		{
 			//LABEL _L1-> LABEL _Ln
-			auto label1 = make_shared<IRCode>(OperationType::LABEL, tests[j]->_op1);
+			auto label1 = make_shared<IRCode>(
+				OperationType::LABEL, tests[j]->_op1);
 			IRCodeFile.push_back(label1);
 			//语句1
 			item->list.at(0)->genCode(this);
 			//JMP _L0
-			auto jmp = make_shared<IRCode>(OperationType::JMP, jmpStmt->_op1);
+			auto jmp = make_shared<IRCode>(
+				OperationType::JMP, jmpStmt->_op1);
 			IRCodeFile.push_back(jmp);
 		}
 		//LEBEL _L0----------------------------
-		auto jmpStmt1 = make_shared<IRCode>(OperationType::LABEL, jmpStmt->_op1);
+		auto jmpStmt1 = make_shared<IRCode>(
+			OperationType::LABEL, jmpStmt->_op1);
 		IRCodeFile.push_back(jmpStmt1);
 	}
 
@@ -461,14 +526,16 @@ namespace compiler{
 			{
 				if (item->varDeclare->identity.tag == Tag::INT)
 				{
-					auto varStmt_code = make_shared<IRCode>(OperationType::IConst, 
-															item->varDeclare->name);
+					auto varStmt_code = make_shared<IRCode>(
+						OperationType::IConst, 
+						item->varDeclare->name);
 					IRCodeFile.push_back(varStmt_code);
 				}
 				else if (item->varDeclare->identity.tag == Tag::FLOAT)
 				{
-					auto varStmt_code = make_shared<IRCode>(OperationType::FConst,
-															item->varDeclare->name);
+					auto varStmt_code = make_shared<IRCode>(
+						OperationType::FConst,
+						item->varDeclare->name);
 					IRCodeFile.push_back(varStmt_code);
 				}
 			}
@@ -490,14 +557,16 @@ namespace compiler{
 						{
 							if (j->varDeclare->identity.tag == Tag::INT)
 							{
-								auto varStmt_code = make_shared<IRCode>(OperationType::IConst,
-																		prefix+"_"+j->varDeclare->name);
+								auto varStmt_code = make_shared<IRCode>(
+									OperationType::IConst,
+									prefix+"_"+j->varDeclare->name);
 								IRCodeFile.push_back(varStmt_code);
 							}
 							else if (j->varDeclare->identity.tag == Tag::FLOAT)
 							{
-								auto varStmt_code = make_shared<IRCode>(OperationType::FConst,
-																		prefix + "_" + j->varDeclare->name);
+								auto varStmt_code = make_shared<IRCode>(
+									OperationType::FConst,
+									prefix + "_" + j->varDeclare->name);
 								IRCodeFile.push_back(varStmt_code);
 							}
 						}

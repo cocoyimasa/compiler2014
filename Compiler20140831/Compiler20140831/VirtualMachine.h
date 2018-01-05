@@ -38,7 +38,7 @@ namespace vm
 		vector<Error> errList;
 		//stack
 		vector<StackItem> constStack;//常量 全局变量栈
-		vector<StackItem> vStack;//全局普通栈
+		vector<StackItem> vStack;//全局普通栈,运行栈
 		map<string, string> varStack;//局部变量栈
 		//code generator
 		compiler::IRCodeGen *generator;
@@ -55,6 +55,8 @@ namespace vm
 		void move();
 		void run();
 		void compute(char op);
+		void computeDirective(char op);
+		void computeDirectiveWithAgrs(char op);
 		void functionExec(string funcName, StackItem *params, int args);
 		//built-in ...something wrong...yabaiyo
 		template<typename T>

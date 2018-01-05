@@ -73,83 +73,130 @@ void VirtualMachine::labelScan()
 		}
 	}
 }
-
-void VirtualMachine::compute(char op)
+double calcExpression(const StackItem& item1, const StackItem& item2,char op){
+	double result = 0;
+#define __Atof(item) atof(item.value.c_str())
+#define __ApplyMath(op) result = __Atof(item1) op __Atof(item2);
+	switch (op)
+	{
+	case '+':
+		__ApplyMath(+)
+		break;
+	case '-':
+		__ApplyMath(-)
+		break;
+	case '*':
+		__ApplyMath(*)
+		break;
+	case '/':
+		__ApplyMath(/)
+		break;
+	default:
+		__ApplyMath(+)
+	}
+	return result;
+}
+void VirtualMachine::computeDirective(char op)
 {
 	double result = 0;
 	Tag resultType;
-	if ((*it)->Count == 0)
+	StackItem item1 = vStack.back();
+	vStack.pop_back();
+	StackItem item2 = vStack.back();
+	vStack.pop_back();
+#define calcString(item1,item2)               \
+	string res = "";                          \
+	resultType = Tag::STRING;                 \
+	if (op != '+'){							  \
+		res = item1.value;					  \
+	}										  \
+	else {									  \
+		res = item1.value + item2.value;	  \
+	}										  \
+	StackItem sitem = {						  \
+		res + "_result",                      \
+		res,								  \
+		Tag::STRING							  \
+	};vStack.push_back(sitem);
+
+	//此处见得带后缀的指令的好处
+	if (item1.type == Tag::INT && item2.type == Tag::INT)
 	{
-		StackItem item1 = vStack.back();
-		vStack.pop_back();
-		StackItem item2 = vStack.back();
-		vStack.pop_back();
+		resultType = Tag::INT;
+		result = calcExpression(item1, item2, op); // calc expression
+	}
+	else if (item1.type == Tag::FLOAT || item2.type == Tag::FLOAT)
+	{
+		resultType = Tag::FLOAT;
+		result = calcExpression(item1, item2, op); // calc expression
+	}
+	else if (item1.type == Tag::STRING)
+	{
+		calcString(item1,item2);
+		return;
+	}
+	else if (item2.type == Tag::STRING){
+		calcString(item2, item1);
+		return;
+	}
+	else {
+		result = calcExpression(item1, item2, op); // calc expression
+	}
 
-		//此处见得带后缀的指令的好处
-		if (item1.type == Tag::INT && item2.type == Tag::INT)
-		{
-			resultType = Tag::INT;
-		}
-		else
-		{
-			resultType = Tag::FLOAT;
-		}
-
+	if (resultType == Tag::INT)
+	{
+		StackItem sitem = {
+			item1.value + item2.value + "_result",
+			to_string((int)result), Tag::INT
+		};
+		vStack.push_back(sitem);
+	}
+	else
+	{
+		StackItem sitem = {
+			item1.value + item2.value + "_result",
+			to_string(result), Tag::FLOAT
+		};
+		vStack.push_back(sitem);
+	}
+}
+void VirtualMachine::computeDirectiveWithAgrs(char op)
+{
+	auto _op1 = (*it)->_op1;
+	auto _op2 = (*it)->_op2;
+	if (varStack.find(_op1) != varStack.end())
+	{
+		string val = varStack[_op1];
+#define __ApplyMathString(op) varStack[_op1] = \
+to_string(atoi(val.c_str()) op atoi(_op2.c_str()));
 		switch (op)
 		{
 		case '+':
-		result = atof(item1.value.c_str()) + atof(item2.value.c_str());
-		break;
+			__ApplyMathString(+)
+			break;
 		case '-':
-		result = atof(item1.value.c_str()) - atof(item2.value.c_str());
-		break;
+			__ApplyMathString(-)
+			break;
 		case '*':
-		result = atof(item1.value.c_str()) * atof(item2.value.c_str());
-		break;
+			__ApplyMathString(*)
+			break;
 		case '/':
-		result = atof(item1.value.c_str()) / atof(item2.value.c_str());
-		break;
+			__ApplyMathString(/ )
+			break;
 		default:
-		result = atof(item1.value.c_str()) + atof(item2.value.c_str());
-
+			__ApplyMathString(+)
 		}
-
-		if (resultType == Tag::INT)
-		{
-			StackItem sitem = { item1.value + item2.value + "_result", to_string((int)result), Tag::INT };
-			vStack.push_back(sitem);
-		}
-		else
-		{
-			StackItem sitem = { item1.value + item2.value + "_result", to_string(result), Tag::FLOAT };
-			vStack.push_back(sitem);
-		}
+	}
+}
+void VirtualMachine::compute(char op)
+{
+	if ((*it)->Count == 0)
+	{
+		computeDirective(op); // compute directive with no args
 	}
 	else if ((*it)->Count == 2)//一般来说，此类表达式出现于for循环 add a 1
 	{
-		if (varStack.find((*it)->_op1) != varStack.end())
-		{
-			string val = varStack[(*it)->_op1];
-			switch (op)
-			{
-			case '+':
-			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) + atoi((*it)->_op2.c_str()));
-			break;
-			case '-':
-			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) - atoi((*it)->_op2.c_str()));
-			break;
-			case '*':
-			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) * atoi((*it)->_op2.c_str()));
-			break;
-			case '/':
-			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) / atoi((*it)->_op2.c_str()));
-			break;
-			default:
-			varStack[(*it)->_op1] = to_string(atoi(val.c_str()) + atoi((*it)->_op2.c_str()));
-
-			}
-			
-		}
+		computeDirectiveWithAgrs(op); // compute directive with 2 args
 	}
 }
 template<typename T>
@@ -166,7 +213,7 @@ void VirtualMachine::read(T* varName)
 
 void VirtualMachine::functionExec(string funcName, StackItem *params, int args)
 {
-	if (funcName == "read"&& args==1)
+	if (funcName == "read" && args==1)
 	{
 		string s;
 		read(&s);
@@ -247,12 +294,36 @@ void VirtualMachine::scan()
 		vStack.pop_back();
 		break;
 	}
+	case OperationType::PUSHF:
+	{
+		StackItem sitem = { "", (*it)->_op1, Tag::FLOAT };
+		vStack.push_back(sitem);
+		break;
+	}
+	case OperationType::POPF:
+	{
+		vStack.pop_back();
+		break;
+	}
+	case OperationType::PUSHS:
+	{
+		StackItem sitem = { "", (*it)->_op1, Tag::STRING };
+		vStack.push_back(sitem);
+		break;
+	}
+	case OperationType::POPS:
+	{
+		vStack.pop_back();
+		break;
+	}
 	case OperationType::STORE:
 	{
-		StackItem aitem = vStack.back();
+		StackItem aitem = vStack.back(); //从全局栈弹出，等待存入局部栈
 		vStack.pop_back();
-		if (varStack.find((*it)->_op1) != varStack.end() && varStack[(*it)->_op1] != aitem.value)
+		if (varStack.find((*it)->_op1) != varStack.end() && 
+			varStack[(*it)->_op1] != aitem.value)
 		{
+			//如果局部栈已经存在变量_op1，则更新其值
 			varStack[(*it)->_op1] = aitem.value;
 		}
 		else
@@ -261,8 +332,9 @@ void VirtualMachine::scan()
 	}
 	case OperationType::LOAD:
 	{
-		string varValue="";
-		Node *varNode=currentTable->lookup((*it)->_op1);
+		//局部栈弹出变量，存入全局栈
+		string varValue = "";
+		Node *varNode = currentTable->lookup((*it)->_op1);
 		Tag t = Tag::INT;
 		if (varNode != NULL)
 		{
@@ -332,7 +404,9 @@ void VirtualMachine::scan()
 		vStack.pop_back();
 		StackItem item2 = vStack.back();
 		vStack.pop_back();
-		if (atof(item1.value.c_str()) - atof(item2.value.c_str()) == 0)//相等时，标志位为真
+		if (abs(atof(item1.value.c_str()) - atof(item2.value.c_str())) <= 0.000001) 
+		// to be fixed
+		//相等时，标志位为真
 		{
 			reg_flag = true;
 		}
@@ -421,7 +495,9 @@ void VirtualMachine::scan()
 		rtInfo.paramNum++;//有几个param。初始化时实参已经加入到了stack上，但是ret时需要将实参也删除，此处必须确定实参个数
 		varStack.insert(std::pair<string, string>((*it)->_op1, item.value));
 		//distance 对iterator做减法
-		rtInfo.varStackItems.push_back(distance(varStack.find((*it)->_op1),varStack.begin()));
+		rtInfo.varStackItems.push_back(
+			distance(varStack.find((*it)->_op1),
+			varStack.begin()));
 		break;
 	}
 	case OperationType::RET:

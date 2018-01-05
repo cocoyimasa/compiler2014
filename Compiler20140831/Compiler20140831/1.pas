@@ -20,6 +20,7 @@ b:=1000.22;
 testFunc:=10;
 end;
 begin
+  write("Hello World");
   i:=10;
   if i=10 then
   begin
@@ -31,10 +32,11 @@ begin
   if i>10 then
   begin
     i:=11;
-	t1:=3888;
+	t1:=3888.2;
 	t2:=34.33;
-	write(t1);
-  write(t2);
+	n:=t1+10.1;
+	write(n);
+	write(t2);
   end;
   while i=10 do
   begin
