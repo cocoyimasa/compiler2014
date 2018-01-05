@@ -16,8 +16,12 @@ char* formatTime(){
 	strftime(now, 79, "%Y-%m-%d %H:%M:%S\0", at);
 	return now;
 }
-void setConsoleColor(HANDLE hOut, WORD color){
+void setConsoleColor(WORD color){
+#ifdef __WINDOWS
+	//更改控制台字体颜色
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hOut, color); // 前景色_加强
+#endif
 }
 void outputIRCode(compiler::IRCodeGen* codeGen){
 	//output IR code in a file
@@ -43,7 +47,13 @@ void printTokens(swd::Lexer* lexer){
 			<< std::endl;
 	}
 }
+#ifdef __WINDOWS
 #define DETECT_MEM_LEAK _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+#else
+#define DETECT_MEM_LEAK
+
+#endif
 
 void getParserStatus(swd::Parser* parser){
 	// if errors occur, print; else show text 'no error'.
@@ -99,10 +109,8 @@ int main(int argc, char* argv[])
 			<< "Compiled."
 			<< "\n------------------------\n"
 			<< endl;
-		//更改控制台字体颜色
-		HANDLE hOut= GetStdHandle(STD_OUTPUT_HANDLE);
 
-		setConsoleColor(hOut,
+		setConsoleColor(
 			FOREGROUND_RED |      // 前景色_红色
 			FOREGROUND_INTENSITY); // 前景色_加强
 
@@ -110,7 +118,7 @@ int main(int argc, char* argv[])
 		myVM.run();
 		///////////////////////////////
 		//白色字体
-		setConsoleColor(hOut,
+		setConsoleColor(
 			FOREGROUND_RED |   
 			FOREGROUND_GREEN | 
 			FOREGROUND_BLUE);  
