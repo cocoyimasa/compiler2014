@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 		swd::Lexer lexer;
 		lexer.readSource(src);
 		lexer.scan();
-		//printTokens(&lexer);
+		printTokens(&lexer);
 
 		/*shared_ptr<swd::SymbolTable> symStack1 = NULL;
 		shared_ptr<swd::SymbolTable> symStack = make_shared<swd::SymbolTable>();*/
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 		parser.parseProgram();
 		getParserStatus(&parser);
 
-		//printSyntaxTree(&parser);
+		printSyntaxTree(&parser);
 		swd::SemanticAnalyzer semanticAnalyzer;
 		parser.root->accept(&semanticAnalyzer);
 		symStack = semanticAnalyzer.symTable;//defined above the parser object--

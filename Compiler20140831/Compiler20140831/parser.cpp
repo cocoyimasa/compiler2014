@@ -613,7 +613,10 @@ namespace swd
 
 	shared_ptr<Expression> Parser::parseFactor()
 	{
-		if (it->tag == IDENT || it->tag == INT || it->tag == FLOAT)
+		if (it->tag == IDENT || 
+			it->tag == INT || 
+			it->tag == FLOAT ||
+			it->tag == STRING)
 		{
 			auto exp = make_shared<Expression>();
 			exp->value = *it;

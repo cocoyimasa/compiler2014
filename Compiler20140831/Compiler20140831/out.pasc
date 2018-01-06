@@ -20,6 +20,14 @@ push 10
 store testFunc
 ret
 label __Main__
+pushs ff
+store ss
+load ss
+push 1
+add
+store ss
+load ss
+call write
 pushs Hello World
 call write
 push 10

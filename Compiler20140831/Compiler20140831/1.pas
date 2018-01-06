@@ -6,6 +6,7 @@ var i:integer;
 	t2:float;
 	k:integer;
 	n:integer;
+	ss:string;
 type anc=record 
    c:integer;
    zz:string;
@@ -20,6 +21,9 @@ b:=1000.22;
 testFunc:=10;
 end;
 begin
+  ss:="ff";
+  ss:=ss+1;
+  write(ss);
   write("Hello World");
   i:=10;
   if i=10 then

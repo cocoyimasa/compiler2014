@@ -79,5 +79,8 @@
     <None Include="1.pas">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="s.pas">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
