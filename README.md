@@ -47,4 +47,4 @@ So VC++2012 or 2013 is needed.(I use *VS2013 community edition*)
 
 欲编译新的文件，请更改main函数的lexer.readSource()的参数.
 
-&copy; 2014 *BUPT*  *WangHesai*
+&copy; Apache License 2.0 2014 *BUPT*  *WangHesai* 作者保留一切解释权
